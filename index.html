@@ -67,6 +67,13 @@ details{margin-top:10px}summary{cursor:pointer;color:var(--dunkel);font-weight:6
   flex-direction:column;gap:10px}
 #scanfeld.offen{display:flex}
 #scanfeld video{width:100%;flex:1;min-height:0;object-fit:cover;border-radius:8px;background:#000}
+#handfeld{flex:1;min-height:0;display:flex;flex-direction:column;gap:8px}
+#handfeld.versteckt{display:none}
+#handliste{flex:1;min-height:0;overflow:auto;font-family:monospace;font-size:15px;line-height:1.5;color:#cfd6da}
+.reiter{display:flex;gap:6px;margin:18px 0 12px;border-bottom:3px solid var(--gruen)}
+.reiter button{flex:1;background:#e9eeec;color:var(--text);border-radius:10px 10px 0 0;min-height:56px;padding:8px 6px}
+.reiter button.an{background:var(--gruen);color:#fff}
+.reiter small{display:block;font-weight:400;font-size:12px;opacity:.85}
 #scantitel{font-weight:700;font-size:18px}
 #scanstatus{min-height:3.2em;font-size:16px;padding:8px 10px;border-radius:8px;background:#2a2f33}
 #scanstatus.gut{background:#0d6b52}#scanstatus.schlecht{background:#8f1d17}
@@ -89,7 +96,7 @@ details{margin-top:10px}summary{cursor:pointer;color:var(--dunkel);font-weight:6
 </div>
 
 <div class="karte" id="k-neu">
-  <h2><span class="nr" id="n1">1</span> Wo liegt es?</h2>
+  <h2><span class="nr" id="n1">1</span> Wo stehen Sie?</h2>
   <div id="ortanzeige" class="versteckt"><div class="ort" id="ortcode"></div><div class="ortname" id="ortname"></div></div>
   <div class="reihe scanknopf">
     <button type="button" id="b-scan">Fach scannen</button>
@@ -103,30 +110,38 @@ details{margin-top:10px}summary{cursor:pointer;color:var(--dunkel);font-weight:6
   sagt genauer, wo das Teil liegt. Der Ort bleibt für die nächste Position stehen.</p>
   <div id="ortbefund"></div>
 
-  <h2 style="margin-top:18px"><span class="nr" id="n2">2</span> Trägt es schon ein Etikett? <small>sonst weiter mit 3</small></h2>
-  <div id="objanzeige" class="versteckt"><div class="ort" id="objcode"></div>
-    <button type="button" class="zweit klein" id="b-objweg" style="margin:6px 0">Nummer entfernen</button></div>
-  <div class="reihe scanknopf">
-    <button type="button" id="b-objscan">Etikett scannen</button>
-    <button type="button" class="zweit" id="b-serie">Viele nacheinander</button>
+  <div class="reiter" role="tablist">
+    <button type="button" id="r-neu" class="an" role="tab">Erfassen<small>neues Teil, mit Foto</small></button>
+    <button type="button" id="r-ein" role="tab">Einsortieren<small>Teil hat schon ein Etikett</small></button>
   </div>
-  <label for="f-obj" id="l-obj">oder Nummer eintippen</label>
-  <input type="text" id="f-obj" placeholder="z. B. FOL-260026-0" autocapitalize="characters" autocomplete="off"
-         spellcheck="false">
-  <p class="hinweis" id="h-obj">Für Teile mit <b>Labornummer</b> (FOL-…, BOX-…, MFP-…): Dann reichen Lagerort und Nummer,
-  Foto und Bezeichnung sind freiwillig. <b>„Viele nacheinander“</b> speichert jedes gescannte Etikett sofort am
-  eingestellten Ort. Ein Fach-Aufkleber dazwischen wechselt den Ort.</p>
-  <div id="objbefund"></div>
   <input type="file" id="i-scanfoto" accept="image/*" capture="environment" class="versteckt">
 
-  <h2 style="margin-top:18px"><span class="nr" id="n3">3</span> Foto <small id="frei3"></small></h2>
+  <div id="p-ein" class="versteckt">
+  <h2><span class="nr" id="n2">2</span> Etikett des Teils scannen</h2>
+  <div class="reihe scanknopf">
+    <button type="button" id="b-serie">Mit der Kamera scannen</button>
+  </div>
+  <button type="button" class="zweit" id="b-hand" style="margin-top:8px">Mit Handscanner (USB oder Bluetooth)</button>
+  <label for="f-obj" id="l-obj">oder Nummer eintippen und Enter</label>
+  <input type="text" id="f-obj" placeholder="z. B. FOL-260026-0" autocapitalize="characters" autocomplete="off"
+         spellcheck="false">
+  <p class="hinweis" id="h-obj">Für Teile mit <b>Labornummer</b> (FOL-…, BOX-…, MFP-…). Jedes Etikett wird
+  <b>sofort am Lagerort oben gespeichert</b>, ohne Foto und ohne Tippen. Ein Fach-Aufkleber dazwischen wechselt
+  den Ort. Steht das Teil schon in der Liste, gilt der neue Ort.</p>
+  <div id="objbefund"></div>
+  </div>
+
+  <div id="p-neu">
+  <div id="objanzeige" class="versteckt"><label>Labornummer dieser Position</label><div class="ort" id="objcode"></div>
+    <button type="button" class="zweit klein" id="b-objweg" style="margin:6px 0">Nummer entfernen</button></div>
+  <h2><span class="nr" id="n3">2</span> Foto <small id="frei3"></small></h2>
   <button type="button" id="b-foto">Foto aufnehmen</button>
   <input type="file" id="i-foto" accept="image/*" capture="environment" class="versteckt">
   <div class="fotos" id="fotos"></div>
   <p class="hinweis">Aus dem Foto werden Hersteller, Artikelnummer und Charge gelesen. Am besten zwei Bilder:
   eines vom ganzen Teil und <b>eines vom Etikett, so nah, dass die Schrift scharf ist</b>.</p>
 
-  <h2 style="margin-top:18px"><span class="nr" id="n4">4</span> Was ist es? <small id="frei4"></small></h2>
+  <h2 style="margin-top:18px"><span class="nr" id="n4">3</span> Was ist es? <small id="frei4"></small></h2>
   <label for="f-gruppe">Gruppe</label>
   <select id="f-gruppe"></select>
   <input type="text" id="f-gruppefrei" class="versteckt" placeholder="Gruppe in eigenen Worten" style="margin-top:8px">
@@ -145,6 +160,7 @@ details{margin-top:10px}summary{cursor:pointer;color:var(--dunkel);font-weight:6
   <div id="befunde"></div>
   <button type="button" id="b-speichern" style="margin-top:12px">Position speichern</button>
   <button type="button" class="zweit versteckt" id="b-abbrechen" style="margin-top:8px">Änderung verwerfen</button>
+  </div>
 </div>
 
 <div class="karte">
@@ -172,6 +188,10 @@ details{margin-top:10px}summary{cursor:pointer;color:var(--dunkel);font-weight:6
 <div id="scanfeld">
   <div id="scantitel"></div>
   <video id="video" playsinline muted></video>
+  <div id="handfeld" class="versteckt">
+    <input type="text" id="f-hand" placeholder="Hier landet der Scan" autocomplete="off" spellcheck="false">
+    <div id="handliste"></div>
+  </div>
   <div id="scanstatus"></div>
   <button type="button" id="b-scanstop">Scannen beenden</button>
 </div>
@@ -183,7 +203,7 @@ details{margin-top:10px}summary{cursor:pointer;color:var(--dunkel);font-weight:6
 
 <script>
 "use strict";
-var STAMM = {"stand":"30.09.2026","orte":[["RCA1-1","CNC-Rollcontainer 1, Fach 1"],["RCA1-2","CNC-Rollcontainer 1, Fach 2"],["RCA1-3","CNC-Rollcontainer 1, Fach 3"],["RCA1-4","CNC-Rollcontainer 1, Fach 4"],["RCA2-1","CNC-Rollcontainer 2, Fach 1"],["RCA2-2","CNC-Rollcontainer 2, Fach 2"],["RCA2-3","CNC-Rollcontainer 2, Fach 3"],["RCA2-4","CNC-Rollcontainer 2, Fach 4"],["RCA3-1","CNC-Rollcontainer 3, Fach 1"],["RCA3-2","CNC-Rollcontainer 3, Fach 2"],["RCA3-3","CNC-Rollcontainer 3, Fach 3"],["RCA3-4","CNC-Rollcontainer 3, Fach 4"],["RCA4-1","CNC-Rollcontainer 4, Fach 1"],["RCA4-2","CNC-Rollcontainer 4, Fach 2"],["RCA4-3","CNC-Rollcontainer 4, Fach 3"],["RCA4-4","CNC-Rollcontainer 4, Fach 4"],["RCA5-1","Rollcontainer 5, Fach 1"],["RCA5-2","Rollcontainer 5, Fach 2"],["RCA5-3","Rollcontainer 5, Fach 3"],["KSA1-1","Kühlschrank A117, Kühlteil, Fach 1"],["KSA1-2","Kühlschrank A117, Kühlteil, Fach 2"],["KSA1-3","Kühlschrank A117, Kühlteil, Fach 3"],["KSA1-4","Kühlschrank A117, Kühlteil, Fach 4"],["KSA1-5","Kühlschrank A117, Kühlteil, Fach 5"],["KSA1-6","Kühlschrank A117, Kühlteil, Fach 6"],["KSA1-7","Kühlschrank A117, Kühlteil, Fach 7"],["KSA1-8","Kühlschrank A117, Kühlteil, Fach 8"],["KSA2-1","Kühlschrank A117, Gefrierteil, Fach 1"],["KSA2-2","Kühlschrank A117, Gefrierteil, Fach 2"],["WSA01-1-L","Kleiner Schrank A117, Bereich 1, Fach 1 links"],["WSA01-1-R","Kleiner Schrank A117, Bereich 1, Fach 1 rechts"],["WSA01-2-L","Kleiner Schrank A117, Bereich 1, Fach 2 links"],["WSA01-2-R","Kleiner Schrank A117, Bereich 1, Fach 2 rechts"],["WSA02-1-L","Kleiner Schrank A117, Bereich 2, Fach 1 links"],["WSA02-1-R","Kleiner Schrank A117, Bereich 2, Fach 1 rechts"],["WSA02-2-L","Kleiner Schrank A117, Bereich 2, Fach 2 links"],["WSA02-2-R","Kleiner Schrank A117, Bereich 2, Fach 2 rechts"],["WSA03-1-L","Kleiner Schrank A117, Bereich 3, Fach 1 links"],["WSA03-1-R","Kleiner Schrank A117, Bereich 3, Fach 1 rechts"],["WSA03-2-L","Kleiner Schrank A117, Bereich 3, Fach 2 links"],["WSA03-2-R","Kleiner Schrank A117, Bereich 3, Fach 2 rechts"],["WSA04-1-L","Schrankwand A117, Bereich 4, Fach 1 links"],["WSA04-1-R","Schrankwand A117, Bereich 4, Fach 1 rechts"],["WSA05-1-L","Schrankwand A117, Bereich 5, Fach 1 links"],["WSA05-1-R","Schrankwand A117, Bereich 5, Fach 1 rechts"],["WSA05-2-L","Schrankwand A117, Bereich 5, Fach 2 links"],["WSA05-2-R","Schrankwand A117, Bereich 5, Fach 2 rechts"],["WSA05-3-L","Schrankwand A117, Bereich 5, Fach 3 links"],["WSA05-3-R","Schrankwand A117, Bereich 5, Fach 3 rechts"],["WSA05-4-L","Schrankwand A117, Bereich 5, Fach 4 links"],["WSA05-4-R","Schrankwand A117, Bereich 5, Fach 4 rechts"],["WSA06-1-L","Schrankwand A117, Bereich 6, Fach 1 links"],["WSA06-1-R","Schrankwand A117, Bereich 6, Fach 1 rechts"],["WSA07-1-L","Schrankwand A117, Bereich 7, Fach 1 links"],["WSA07-1-R","Schrankwand A117, Bereich 7, Fach 1 rechts"],["WSA07-2-L","Schrankwand A117, Bereich 7, Fach 2 links"],["WSA07-2-R","Schrankwand A117, Bereich 7, Fach 2 rechts"],["WSA07-3-L","Schrankwand A117, Bereich 7, Fach 3 links"],["WSA07-3-R","Schrankwand A117, Bereich 7, Fach 3 rechts"],["WSA08-1","Schrankwand A117, Bereich 8, Fach 1"],["WSA09-1","Schrankwand A117, Bereich 9, Fach 1"],["WSA10-1","Schrankwand A117, Bereich 10, Fach 1"],["WSA11-1","Schrankwand A117, Bereich 11, Fach 1"],["WSA12-1-L","Schrankwand A117, Bereich 12, Fach 1 links"],["WSA12-1-R","Schrankwand A117, Bereich 12, Fach 1 rechts"],["WSA13-1","Schrankwand A117, Bereich 13, Fach 1"],["WSA13-2","Schrankwand A117, Bereich 13, Fach 2"],["WSA13-3","Schrankwand A117, Bereich 13, Fach 3"],["WSA13-4","Schrankwand A117, Bereich 13, Fach 4"],["WSA13-5","Schrankwand A117, Bereich 13, Fach 5"],["WSA13-6","Schrankwand A117, Bereich 13, Fach 6"],["WSA14-1","Schrankwand A117, Bereich 14, Fach 1"],["WSA14-2","Schrankwand A117, Bereich 14, Fach 2"],["WSA14-3","Schrankwand A117, Bereich 14, Fach 3"],["WSA14-4","Schrankwand A117, Bereich 14, Fach 4"],["WSA14-5","Schrankwand A117, Bereich 14, Fach 5"],["WSA14-6","Schrankwand A117, Bereich 14, Fach 6"],["WSA15-1","Schrankwand A117, Bereich 15, Fach 1"],["WSA15-2","Schrankwand A117, Bereich 15, Fach 2"],["WSA15-3","Schrankwand A117, Bereich 15, Fach 3"],["WSA15-4","Schrankwand A117, Bereich 15, Fach 4"],["WSA15-5","Schrankwand A117, Bereich 15, Fach 5"],["WSA15-6","Schrankwand A117, Bereich 15, Fach 6"],["WSA16-1","Schrankwand A117, Bereich 16, Fach 1"],["WSA16-2","Schrankwand A117, Bereich 16, Fach 2"],["WSA16-3","Schrankwand A117, Bereich 16, Fach 3"],["WSA16-4","Schrankwand A117, Bereich 16, Fach 4"],["WSA16-5","Schrankwand A117, Bereich 16, Fach 5"],["WSA16-6","Schrankwand A117, Bereich 16, Fach 6"],["WSA17-1-L","Schrankwand A117, Bereich 17, Fach 1 links"],["WSA17-1-R","Schrankwand A117, Bereich 17, Fach 1 rechts"],["WSA18-1-L","Schrankwand A117, Bereich 18, Fach 1 links"],["WSA18-1-R","Schrankwand A117, Bereich 18, Fach 1 rechts"],["WSA18-2-L","Schrankwand A117, Bereich 18, Fach 2 links"],["WSA18-2-R","Schrankwand A117, Bereich 18, Fach 2 rechts"],["WSA18-3-L","Schrankwand A117, Bereich 18, Fach 3 links"],["WSA18-3-R","Schrankwand A117, Bereich 18, Fach 3 rechts"],["WSA18-4-L","Schrankwand A117, Bereich 18, Fach 4 links"],["WSA18-4-R","Schrankwand A117, Bereich 18, Fach 4 rechts"],["WSA18-5-L","Schrankwand A117, Bereich 18, Fach 5 links"],["WSA18-5-R","Schrankwand A117, Bereich 18, Fach 5 rechts"],["WBA1-1","Schrank unter dem Waschbecken, Fach 1"],["WBA2-1","Ausziehschrank mit Mülleimer unter dem Waschbecken, Fach 1"],["ABA1-1","Sammelbehälter kontaminierter Feststoffabfall, Fach 1"],["LSA1-1","Lösemittelschrank CNC8 unter dem Digestorium, Bereich 1, Fach 1"],["LSA2-1","Lösemittelschrank CNC8 unter dem Digestorium, Bereich 2, Fach 1"],["EXA1-1-L","Sicherheitsschrank CNC8 unter dem Wärmeschrank, Fach 1 links"],["EXA1-1-R","Sicherheitsschrank CNC8 unter dem Wärmeschrank, Fach 1 rechts"],["SSA01-1","Schubladenschrank CNC8, Bereich 1, Fach 1"],["SSA02-1","Schubladenschrank CNC8, Bereich 2, Fach 1"],["SSA03-1","Schubladenschrank CNC8, Bereich 3, Fach 1"],["SSA04-1","Schubladenschrank CNC8, Bereich 4, Fach 1"],["SSA05-1","Schubladenschrank CNC8, Bereich 5, Fach 1"],["SSA06-1","Schubladenschrank CNC8, Bereich 6, Fach 1"],["SSA06-2","Schubladenschrank CNC8, Bereich 6, Fach 2"],["STA1-1","Schrank-Tisch-Kombination A117, Bereich 1, Fach 1"],["STA1-2","Schrank-Tisch-Kombination A117, Bereich 1, Fach 2"],["STA2-1","Schrank-Tisch-Kombination A117, Bereich 2, Fach 1"],["STA2-2","Schrank-Tisch-Kombination A117, Bereich 2, Fach 2"],["RCA1","CNC-Rollcontainer 1"],["RCA2","CNC-Rollcontainer 2"],["RCA3","CNC-Rollcontainer 3"],["RCA4","CNC-Rollcontainer 4"],["RCA5","Rollcontainer 5"],["KSA1","Kühlschrank A117, Kühlteil"],["KSA2","Kühlschrank A117, Gefrierteil"],["RLB1","Regallager 1"],["RLB2","Regallager 2"],["RLB3","Regallager 3"],["WSA01","Kleiner Schrank A117, Bereich 1"],["WSA01-L","Kleiner Schrank A117, Bereich 1, Tür links"],["WSA01-R","Kleiner Schrank A117, Bereich 1, Tür rechts"],["WSA02","Kleiner Schrank A117, Bereich 2"],["WSA02-L","Kleiner Schrank A117, Bereich 2, Tür links"],["WSA02-R","Kleiner Schrank A117, Bereich 2, Tür rechts"],["WSA03","Kleiner Schrank A117, Bereich 3"],["WSA03-L","Kleiner Schrank A117, Bereich 3, Tür links"],["WSA03-R","Kleiner Schrank A117, Bereich 3, Tür rechts"],["WSA04","Schrankwand A117, Bereich 4"],["WSA04-L","Schrankwand A117, Bereich 4, Tür links"],["WSA04-R","Schrankwand A117, Bereich 4, Tür rechts"],["WSA05","Schrankwand A117, Bereich 5"],["WSA05-L","Schrankwand A117, Bereich 5, Tür links"],["WSA05-R","Schrankwand A117, Bereich 5, Tür rechts"],["WSA06","Schrankwand A117, Bereich 6"],["WSA06-L","Schrankwand A117, Bereich 6, Tür links"],["WSA06-R","Schrankwand A117, Bereich 6, Tür rechts"],["WSA07","Schrankwand A117, Bereich 7"],["WSA07-L","Schrankwand A117, Bereich 7, Tür links"],["WSA07-R","Schrankwand A117, Bereich 7, Tür rechts"],["WSA08","Schrankwand A117, Bereich 8"],["WSA09","Schrankwand A117, Bereich 9"],["WSA10","Schrankwand A117, Bereich 10"],["WSA11","Schrankwand A117, Bereich 11"],["WSA12","Schrankwand A117, Bereich 12"],["WSA12-L","Schrankwand A117, Bereich 12, Tür links"],["WSA12-R","Schrankwand A117, Bereich 12, Tür rechts"],["WSA13","Schrankwand A117, Bereich 13"],["WSA14","Schrankwand A117, Bereich 14"],["WSA15","Schrankwand A117, Bereich 15"],["WSA16","Schrankwand A117, Bereich 16"],["WSA17","Schrankwand A117, Bereich 17"],["WSA17-L","Schrankwand A117, Bereich 17, Tür links"],["WSA17-R","Schrankwand A117, Bereich 17, Tür rechts"],["WSA18","Schrankwand A117, Bereich 18"],["WSA18-L","Schrankwand A117, Bereich 18, Tür links"],["WSA18-R","Schrankwand A117, Bereich 18, Tür rechts"],["WBA1","Schrank unter dem Waschbecken"],["WBA2","Ausziehschrank mit Mülleimer unter dem Waschbecken"],["ABA1","Sammelbehälter kontaminierter Feststoffabfall"],["LSA1","Lösemittelschrank CNC8 unter dem Digestorium, Bereich 1"],["LSA2","Lösemittelschrank CNC8 unter dem Digestorium, Bereich 2"],["EXA1","Sicherheitsschrank CNC8 unter dem Wärmeschrank"],["EXA1-L","Sicherheitsschrank CNC8 unter dem Wärmeschrank, Tür links"],["EXA1-R","Sicherheitsschrank CNC8 unter dem Wärmeschrank, Tür rechts"],["SSA01","Schubladenschrank CNC8, Bereich 1"],["SSA02","Schubladenschrank CNC8, Bereich 2"],["SSA03","Schubladenschrank CNC8, Bereich 3"],["SSA04","Schubladenschrank CNC8, Bereich 4"],["SSA05","Schubladenschrank CNC8, Bereich 5"],["SSA06","Schubladenschrank CNC8, Bereich 6"],["STA1","Schrank-Tisch-Kombination A117, Bereich 1"],["STA2","Schrank-Tisch-Kombination A117, Bereich 2"]],"gruppen":["Folie","Platte / Halbzeug","Klebeband / Klebefolie","Membran / Filter","Fertigteil / Chip","Verbrauchsmaterial","Glas- und Laborgerät","Chemikalie","Werkzeug","Messmittel","Gerät / Anlagenzubehör","Schutzausrüstung","Verpackung","Entsorgung"],"upload":""};
+var STAMM = {"stand":"30.09.2026","orte":[["RCA1-1","CNC-Rollcontainer 1, Fach 1"],["RCA1-2","CNC-Rollcontainer 1, Fach 2"],["RCA1-3","CNC-Rollcontainer 1, Fach 3"],["RCA1-4","CNC-Rollcontainer 1, Fach 4"],["RCA2-1","CNC-Rollcontainer 2, Fach 1"],["RCA2-2","CNC-Rollcontainer 2, Fach 2"],["RCA2-3","CNC-Rollcontainer 2, Fach 3"],["RCA2-4","CNC-Rollcontainer 2, Fach 4"],["RCA3-1","CNC-Rollcontainer 3, Fach 1"],["RCA3-2","CNC-Rollcontainer 3, Fach 2"],["RCA3-3","CNC-Rollcontainer 3, Fach 3"],["RCA3-4","CNC-Rollcontainer 3, Fach 4"],["RCA4-1","CNC-Rollcontainer 4, Fach 1"],["RCA4-2","CNC-Rollcontainer 4, Fach 2"],["RCA4-3","CNC-Rollcontainer 4, Fach 3"],["RCA4-4","CNC-Rollcontainer 4, Fach 4"],["RCA5-1","Rollcontainer 5, Fach 1"],["RCA5-2","Rollcontainer 5, Fach 2"],["RCA5-3","Rollcontainer 5, Fach 3"],["KSA1-1","Kühlschrank A117, Kühlteil, Fach 1"],["KSA1-2","Kühlschrank A117, Kühlteil, Fach 2"],["KSA1-3","Kühlschrank A117, Kühlteil, Fach 3"],["KSA1-4","Kühlschrank A117, Kühlteil, Fach 4"],["KSA1-5","Kühlschrank A117, Kühlteil, Fach 5"],["KSA1-6","Kühlschrank A117, Kühlteil, Fach 6"],["KSA1-7","Kühlschrank A117, Kühlteil, Fach 7"],["KSA1-8","Kühlschrank A117, Kühlteil, Fach 8"],["KSA2-1","Kühlschrank A117, Gefrierteil, Fach 1"],["KSA2-2","Kühlschrank A117, Gefrierteil, Fach 2"],["WSA01-1-L","Kleiner Schrank A117, Bereich 1, Fach 1 links"],["WSA01-1-R","Kleiner Schrank A117, Bereich 1, Fach 1 rechts"],["WSA01-2-L","Kleiner Schrank A117, Bereich 1, Fach 2 links"],["WSA01-2-R","Kleiner Schrank A117, Bereich 1, Fach 2 rechts"],["WSA02-1-L","Kleiner Schrank A117, Bereich 2, Fach 1 links"],["WSA02-1-R","Kleiner Schrank A117, Bereich 2, Fach 1 rechts"],["WSA02-2-L","Kleiner Schrank A117, Bereich 2, Fach 2 links"],["WSA02-2-R","Kleiner Schrank A117, Bereich 2, Fach 2 rechts"],["WSA03-1-L","Kleiner Schrank A117, Bereich 3, Fach 1 links"],["WSA03-1-R","Kleiner Schrank A117, Bereich 3, Fach 1 rechts"],["WSA03-2-L","Kleiner Schrank A117, Bereich 3, Fach 2 links"],["WSA03-2-R","Kleiner Schrank A117, Bereich 3, Fach 2 rechts"],["WSA04-1-L","Schrankwand A117, Bereich 4, Fach 1 links"],["WSA04-1-R","Schrankwand A117, Bereich 4, Fach 1 rechts"],["WSA05-1-L","Schrankwand A117, Bereich 5, Fach 1 links"],["WSA05-1-R","Schrankwand A117, Bereich 5, Fach 1 rechts"],["WSA05-2-L","Schrankwand A117, Bereich 5, Fach 2 links"],["WSA05-2-R","Schrankwand A117, Bereich 5, Fach 2 rechts"],["WSA05-3-L","Schrankwand A117, Bereich 5, Fach 3 links"],["WSA05-3-R","Schrankwand A117, Bereich 5, Fach 3 rechts"],["WSA05-4-L","Schrankwand A117, Bereich 5, Fach 4 links"],["WSA05-4-R","Schrankwand A117, Bereich 5, Fach 4 rechts"],["WSA06-1-L","Schrankwand A117, Bereich 6, Fach 1 links"],["WSA06-1-R","Schrankwand A117, Bereich 6, Fach 1 rechts"],["WSA07-1-L","Schrankwand A117, Bereich 7, Fach 1 links"],["WSA07-1-R","Schrankwand A117, Bereich 7, Fach 1 rechts"],["WSA07-2-L","Schrankwand A117, Bereich 7, Fach 2 links"],["WSA07-2-R","Schrankwand A117, Bereich 7, Fach 2 rechts"],["WSA07-3-L","Schrankwand A117, Bereich 7, Fach 3 links"],["WSA07-3-R","Schrankwand A117, Bereich 7, Fach 3 rechts"],["WSA08-1","Schrankwand A117, Bereich 8, Fach 1"],["WSA09-1","Schrankwand A117, Bereich 9, Fach 1"],["WSA10-1","Schrankwand A117, Bereich 10, Fach 1"],["WSA11-1","Schrankwand A117, Bereich 11, Fach 1"],["WSA12-1-L","Schrankwand A117, Bereich 12, Fach 1 links"],["WSA12-1-R","Schrankwand A117, Bereich 12, Fach 1 rechts"],["WSA13-1","Schrankwand A117, Bereich 13, Fach 1"],["WSA13-2","Schrankwand A117, Bereich 13, Fach 2"],["WSA13-3","Schrankwand A117, Bereich 13, Fach 3"],["WSA13-4","Schrankwand A117, Bereich 13, Fach 4"],["WSA13-5","Schrankwand A117, Bereich 13, Fach 5"],["WSA13-6","Schrankwand A117, Bereich 13, Fach 6"],["WSA14-1","Schrankwand A117, Bereich 14, Fach 1"],["WSA14-2","Schrankwand A117, Bereich 14, Fach 2"],["WSA14-3","Schrankwand A117, Bereich 14, Fach 3"],["WSA14-4","Schrankwand A117, Bereich 14, Fach 4"],["WSA14-5","Schrankwand A117, Bereich 14, Fach 5"],["WSA14-6","Schrankwand A117, Bereich 14, Fach 6"],["WSA15-1","Schrankwand A117, Bereich 15, Fach 1"],["WSA15-2","Schrankwand A117, Bereich 15, Fach 2"],["WSA15-3","Schrankwand A117, Bereich 15, Fach 3"],["WSA15-4","Schrankwand A117, Bereich 15, Fach 4"],["WSA15-5","Schrankwand A117, Bereich 15, Fach 5"],["WSA15-6","Schrankwand A117, Bereich 15, Fach 6"],["WSA16-1","Schrankwand A117, Bereich 16, Fach 1"],["WSA16-2","Schrankwand A117, Bereich 16, Fach 2"],["WSA16-3","Schrankwand A117, Bereich 16, Fach 3"],["WSA16-4","Schrankwand A117, Bereich 16, Fach 4"],["WSA16-5","Schrankwand A117, Bereich 16, Fach 5"],["WSA16-6","Schrankwand A117, Bereich 16, Fach 6"],["WSA17-1-L","Schrankwand A117, Bereich 17, Fach 1 links"],["WSA17-1-R","Schrankwand A117, Bereich 17, Fach 1 rechts"],["WSA18-1-L","Schrankwand A117, Bereich 18, Fach 1 links"],["WSA18-1-R","Schrankwand A117, Bereich 18, Fach 1 rechts"],["WSA18-2-L","Schrankwand A117, Bereich 18, Fach 2 links"],["WSA18-2-R","Schrankwand A117, Bereich 18, Fach 2 rechts"],["WSA18-3-L","Schrankwand A117, Bereich 18, Fach 3 links"],["WSA18-3-R","Schrankwand A117, Bereich 18, Fach 3 rechts"],["WSA18-4-L","Schrankwand A117, Bereich 18, Fach 4 links"],["WSA18-4-R","Schrankwand A117, Bereich 18, Fach 4 rechts"],["WSA18-5-L","Schrankwand A117, Bereich 18, Fach 5 links"],["WSA18-5-R","Schrankwand A117, Bereich 18, Fach 5 rechts"],["WBA1-1","Schrank unter dem Waschbecken, Fach 1"],["WBA2-1","Ausziehschrank mit Mülleimer unter dem Waschbecken, Fach 1"],["ABA1-1","Sammelbehälter kontaminierter Feststoffabfall, Fach 1"],["LSA1-1","Lösemittelschrank CNC8 unter dem Digestorium, Bereich 1, Fach 1"],["LSA2-1","Lösemittelschrank CNC8 unter dem Digestorium, Bereich 2, Fach 1"],["EXA1-1-L","Sicherheitsschrank CNC8 unter dem Wärmeschrank, Fach 1 links"],["EXA1-1-R","Sicherheitsschrank CNC8 unter dem Wärmeschrank, Fach 1 rechts"],["SSA01-1","Schubladenschrank CNC8, Bereich 1, Fach 1"],["SSA02-1","Schubladenschrank CNC8, Bereich 2, Fach 1"],["SSA03-1","Schubladenschrank CNC8, Bereich 3, Fach 1"],["SSA04-1","Schubladenschrank CNC8, Bereich 4, Fach 1"],["SSA05-1","Schubladenschrank CNC8, Bereich 5, Fach 1"],["SSA06-1","Schubladenschrank CNC8, Bereich 6, Fach 1"],["SSA06-2","Schubladenschrank CNC8, Bereich 6, Fach 2"],["STA1-1","Schrank-Tisch-Kombination A117, Bereich 1, Fach 1"],["STA1-2","Schrank-Tisch-Kombination A117, Bereich 1, Fach 2"],["STA2-1","Schrank-Tisch-Kombination A117, Bereich 2, Fach 1"],["STA2-2","Schrank-Tisch-Kombination A117, Bereich 2, Fach 2"],["RHA1-1","Rollenhalter hinter der Summa, Fach 1"],["RCA1","CNC-Rollcontainer 1"],["RCA2","CNC-Rollcontainer 2"],["RCA3","CNC-Rollcontainer 3"],["RCA4","CNC-Rollcontainer 4"],["RCA5","Rollcontainer 5"],["KSA1","Kühlschrank A117, Kühlteil"],["KSA2","Kühlschrank A117, Gefrierteil"],["RLB1","Regallager 1"],["RLB2","Regallager 2"],["RLB3","Regallager 3"],["WSA01","Kleiner Schrank A117, Bereich 1"],["WSA01-L","Kleiner Schrank A117, Bereich 1, Tür links"],["WSA01-R","Kleiner Schrank A117, Bereich 1, Tür rechts"],["WSA02","Kleiner Schrank A117, Bereich 2"],["WSA02-L","Kleiner Schrank A117, Bereich 2, Tür links"],["WSA02-R","Kleiner Schrank A117, Bereich 2, Tür rechts"],["WSA03","Kleiner Schrank A117, Bereich 3"],["WSA03-L","Kleiner Schrank A117, Bereich 3, Tür links"],["WSA03-R","Kleiner Schrank A117, Bereich 3, Tür rechts"],["WSA04","Schrankwand A117, Bereich 4"],["WSA04-L","Schrankwand A117, Bereich 4, Tür links"],["WSA04-R","Schrankwand A117, Bereich 4, Tür rechts"],["WSA05","Schrankwand A117, Bereich 5"],["WSA05-L","Schrankwand A117, Bereich 5, Tür links"],["WSA05-R","Schrankwand A117, Bereich 5, Tür rechts"],["WSA06","Schrankwand A117, Bereich 6"],["WSA06-L","Schrankwand A117, Bereich 6, Tür links"],["WSA06-R","Schrankwand A117, Bereich 6, Tür rechts"],["WSA07","Schrankwand A117, Bereich 7"],["WSA07-L","Schrankwand A117, Bereich 7, Tür links"],["WSA07-R","Schrankwand A117, Bereich 7, Tür rechts"],["WSA08","Schrankwand A117, Bereich 8"],["WSA09","Schrankwand A117, Bereich 9"],["WSA10","Schrankwand A117, Bereich 10"],["WSA11","Schrankwand A117, Bereich 11"],["WSA12","Schrankwand A117, Bereich 12"],["WSA12-L","Schrankwand A117, Bereich 12, Tür links"],["WSA12-R","Schrankwand A117, Bereich 12, Tür rechts"],["WSA13","Schrankwand A117, Bereich 13"],["WSA14","Schrankwand A117, Bereich 14"],["WSA15","Schrankwand A117, Bereich 15"],["WSA16","Schrankwand A117, Bereich 16"],["WSA17","Schrankwand A117, Bereich 17"],["WSA17-L","Schrankwand A117, Bereich 17, Tür links"],["WSA17-R","Schrankwand A117, Bereich 17, Tür rechts"],["WSA18","Schrankwand A117, Bereich 18"],["WSA18-L","Schrankwand A117, Bereich 18, Tür links"],["WSA18-R","Schrankwand A117, Bereich 18, Tür rechts"],["WBA1","Schrank unter dem Waschbecken"],["WBA2","Ausziehschrank mit Mülleimer unter dem Waschbecken"],["ABA1","Sammelbehälter kontaminierter Feststoffabfall"],["LSA1","Lösemittelschrank CNC8 unter dem Digestorium, Bereich 1"],["LSA2","Lösemittelschrank CNC8 unter dem Digestorium, Bereich 2"],["EXA1","Sicherheitsschrank CNC8 unter dem Wärmeschrank"],["EXA1-L","Sicherheitsschrank CNC8 unter dem Wärmeschrank, Tür links"],["EXA1-R","Sicherheitsschrank CNC8 unter dem Wärmeschrank, Tür rechts"],["SSA01","Schubladenschrank CNC8, Bereich 1"],["SSA02","Schubladenschrank CNC8, Bereich 2"],["SSA03","Schubladenschrank CNC8, Bereich 3"],["SSA04","Schubladenschrank CNC8, Bereich 4"],["SSA05","Schubladenschrank CNC8, Bereich 5"],["SSA06","Schubladenschrank CNC8, Bereich 6"],["STA1","Schrank-Tisch-Kombination A117, Bereich 1"],["STA2","Schrank-Tisch-Kombination A117, Bereich 2"],["RHA1","Rollenhalter hinter der Summa"]],"gruppen":["Folie","Platte / Halbzeug","Klebeband / Klebefolie","Membran / Filter","Fertigteil / Chip","Verbrauchsmaterial","Glas- und Laborgerät","Chemikalie","Werkzeug","Messmittel","Gerät / Anlagenzubehör","Schutzausrüstung","Verpackung","Entsorgung"],"upload":""};
 var ORT = {};                       // Code -> Bezeichnung
 STAMM.orte.forEach(function(o){ ORT[o[0]] = o[1]; });
 var Z = {wer:"", positionen:[], naechste:1};      // der ganze Zustand
@@ -257,11 +277,34 @@ function ortSetzen(code, quelle){
 }
 $("f-ort").addEventListener("change", function(){
   var c = normal(this.value);
-  if (siehtWieObjektAus(c)) { this.value = A.ort; objSetzen(c, "getippt");
+  if (siehtWieObjektAus(c)) { this.value = A.ort;
     $("ortbefund").innerHTML = '<div class="befund warn"><b>Das ist eine Labornummer, kein Lagerort.</b>' +
-      'Sie steht jetzt unter Punkt 2. Hier bitte den Aufkleber am Fach angeben.</div>'; return; }
+      'Hier bitte den Aufkleber am Fach angeben. Teile mit Etikett gehören in den Reiter „Einsortieren“.</div>'; return; }
   ortSetzen(c, "getippt");
 });
+
+/* ---------- Reiter: Erfassen (neu, mit Foto) und Einsortieren (nur scannen) ---------- */
+function reiter(welcher){
+  var ein = welcher === "ein";
+  $("p-ein").classList.toggle("versteckt", !ein); $("p-neu").classList.toggle("versteckt", ein);
+  $("r-ein").classList.toggle("an", ein); $("r-neu").classList.toggle("an", !ein);
+}
+$("r-neu").onclick = function(){ reiter("neu"); };
+$("r-ein").onclick = function(){ reiter("ein"); };
+/* Ein Teil mit Etikett wird ohne weiteren Knopf am aktuellen Ort gespeichert. */
+function einsortieren(code){
+  code = normal(code);
+  reiter("ein");
+  var b;
+  if (!objGueltig(code)) b = ["error", "„" + code + "“ ist keine gültige Labornummer.",
+    siehtWieObjektAus(code) ? "Die Prüfziffer am Ende passt nicht. Bitte noch einmal scannen oder Ziffer für Ziffer vergleichen."
+                            : "Erwartet wird die Form FOL-260026-0. Ein Fach-Aufkleber gehört unter Punkt 1."];
+  else if (!$("f-wer").value.trim()) b = ["error", "Ihr Name fehlt.", "Ganz oben eintragen, dann noch einmal scannen."];
+  else if (!A.ort) b = ["error", "Der Lagerort fehlt.", "Erst unter Punkt 1 das Fach scannen, dann das Teil."];
+  else { serieSpeichern(code); b = ["ok", code + " → " + A.ort, "Gespeichert. Das nächste Etikett kann kommen."]; }
+  befundeZeigen([b], "objbefund");
+  return b[0] === "ok";
+}
 
 /* ---------- Labornummer eines schon etikettierten Teils ---------- */
 function objSetzen(code, quelle){
@@ -273,14 +316,16 @@ function objSetzen(code, quelle){
     return false;
   }
   A.obj = code; A.objquelle = code ? quelle : "";
-  $("f-obj").value = code;
   $("objanzeige").classList.toggle("versteckt", !code);
   $("objcode").textContent = code;
   $("objbefund").innerHTML = "";
   marken();
   return true;
 }
-$("f-obj").addEventListener("change", function(){ objSetzen(this.value, "getippt"); });
+$("f-obj").addEventListener("change", function(){
+  if (!normal(this.value)) return;
+  if (einsortieren(this.value)) this.value = "";
+});
 $("b-objweg").onclick = function(){ objSetzen("", ""); };
 
 /* ---------- Scanner: ein Fenster fuer Fach, Etikett und Serie ----------
@@ -323,10 +368,8 @@ function ergebnis(text){
     }
     return true;                                   // Serie laeuft weiter
   }
-  if (siehtWieObjektAus(code)) { objSetzen(code, "scan"); }
-  else { ortSetzen(code, "scan");
-    if (scanModus === "obj") $("objbefund").innerHTML = '<div class="befund warn"><b>Das war ein Fach-Aufkleber.</b>' +
-      'Er ist als Lagerort übernommen. Für das Teil bitte sein eigenes Etikett scannen.</div>'; }
+  if (siehtWieObjektAus(code)) einsortieren(code);          // Teil statt Fach gescannt: gleich einsortieren
+  else ortSetzen(code, "scan");
   return false;                                    // Einzelscan: Fenster schliessen
 }
 function scanStart(modus){
@@ -348,7 +391,40 @@ function scanStop(){
   scanModus = "";
   if (strom) strom.getTracks().forEach(function(t){ t.stop(); });
   strom = null; $("scanfeld").classList.remove("offen");
+  $("handfeld").classList.add("versteckt"); $("video").classList.remove("versteckt");
 }
+/* ---------- Handscanner: meldet sich als Tastatur, tippt den Code und drueckt Enter ----------
+   Laeuft wie "Viele nacheinander", nur ohne Kamera. Geht deshalb auch am PC ohne BarcodeDetector. */
+function handStart(){
+  if (!$("f-wer").value.trim()) {
+    befundeZeigen([["error", "Ihr Name fehlt.", "Ganz oben eintragen, dann den Handscanner starten."]], "objbefund"); return; }
+  scanModus = "serie"; zuletzt = "";
+  $("video").classList.add("versteckt"); $("handfeld").classList.remove("versteckt");
+  $("handliste").innerHTML = "";
+  $("scantitel").textContent = "Handscanner: Fach, dann Teile";
+  status(A.ort ? "Lagerort: " + A.ort + " · jetzt Teile scannen" : "Zuerst den Fach-Aufkleber scannen");
+  $("scanfeld").classList.add("offen");
+  $("f-hand").value = ""; $("f-hand").focus();
+}
+$("b-hand").onclick = handStart;
+$("b-scanstop").onclick = scanStop;
+$("f-hand").addEventListener("keydown", function(e){
+  if (e.key !== "Enter") return;
+  e.preventDefault();
+  // Scanner mit US-Tastaturbelegung schickt auf deutscher Belegung "ß" statt "-"
+  var t = normal(this.value.replace(/[ß?]/g, "-"));
+  this.value = "";
+  if (!t) return;
+  zuletzt = "";
+  ergebnis(t);
+  var s = $("scanstatus"), z = document.createElement("div");
+  z.textContent = (s.className === "schlecht" ? "✗ " : "✓ ") + s.textContent;
+  $("handliste").insertBefore(z, $("handliste").firstChild);
+});
+$("f-hand").addEventListener("blur", function(){
+  if ($("scanfeld").classList.contains("offen") && !$("handfeld").classList.contains("versteckt"))
+    setTimeout(function(){ $("f-hand").focus(); }, 50);
+});
 function scanSchleife(){
   if (!strom) return;
   detektor.detect($("video")).then(function(f){
@@ -364,13 +440,11 @@ if (!SCAN) {
     "neben dem Code, z. B. <b>WSA05-2-L</b>. Nehmen Sie den <b>kleinen Aufkleber am Fach</b>, nicht das große " +
     "Schild an der Tür. Der Ort bleibt für die nächste Position stehen.";
   $("l-obj").textContent = "Labornummer vom Etikett eintippen";
-  $("h-obj").innerHTML = "Für Teile mit <b>Labornummer</b> (FOL-…, BOX-…, MFP-…): Dann reichen Lagerort und Nummer, " +
-    "Foto und Bezeichnung sind freiwillig. Die letzte Ziffer ist eine Prüfziffer, Tippfehler fallen sofort auf.";
+  $("h-obj").innerHTML = "Für Teile mit <b>Labornummer</b> (FOL-…, BOX-…, MFP-…). Jede Nummer wird sofort am " +
+    "Lagerort oben gespeichert. Die letzte Ziffer ist eine Prüfziffer, Tippfehler fallen sofort auf.";
 } else {
   $("b-scan").onclick = function(){ scanStart("ort"); };
-  $("b-objscan").onclick = function(){ scanStart("obj"); };
   $("b-serie").onclick = function(){ scanStart("serie"); };
-  $("b-scanstop").onclick = scanStop;
   $("b-scanfoto").onclick = function(){ fotoZiel = "ort"; $("i-scanfoto").click(); };
   $("i-scanfoto").onchange = function(){
     var d = this.files[0]; this.value = "";
@@ -494,7 +568,7 @@ function listeZeigen(){
   $("liste").innerHTML = n ? Z.positionen.slice().reverse().map(function(p){
     var bild = p.fotos.length ? '<img src="' + p.fotos[0].daten + '" alt="">' : '<div class="etik">Etikett</div>';
     var titel = p.bezeichnung || p.objekt_id;
-    var unter = p.lagerort + (p.objekt_id && p.bezeichnung ? ' · ' + p.objekt_id : '') +
+    var unter = (p.art === "umlagern" ? "einsortiert · " : "neu · ") + p.lagerort + (p.objekt_id && p.bezeichnung ? ' · ' + p.objekt_id : '') +
       (p.gruppe ? ' · ' + p.gruppe : '') + (p.fotos.length ? ' · ' + p.fotos.length + (p.fotos.length === 1 ? ' Foto' : ' Fotos') : '');
     return '<div class="pos">' + bild + '<div><div class="t">' + esc(titel) + '</div><div class="u">' + esc(unter) +
       '</div></div><button type="button" class="zweit klein" data-lfd="' + p.lfd + '">ändern</button></div>'; }).join("")
@@ -509,6 +583,7 @@ $("liste").addEventListener("click", function(e){
   felderLeeren();
   A.bearbeite = i; A.fotos = p.fotos.slice();
   ortSetzen(p.lagerort, p.lagerort_quelle);
+  reiter("neu");
   if (p.objekt_id) objSetzen(p.objekt_id, "liste");
   var bekannt = !p.gruppe || STAMM.gruppen.indexOf(p.gruppe) >= 0;
   $("f-gruppe").value = bekannt ? p.gruppe : FREI;
@@ -550,13 +625,40 @@ $("b-laden").onclick = function(){
   var a = document.createElement("a");
   a.href = URL.createObjectURL(alsDatei()); a.download = dateiname();
   document.body.appendChild(a); a.click(); a.remove();
+  abgabeMelden("ok", "Datei gespeichert: " + a.download,
+    Z.positionen.length + " Positionen um " + uhrzeit() + ". Sie liegt bei den Downloads dieses Handys – " +
+    "von dort muss sie noch ins Labor (Upload oder Mail).");
 };
+function uhrzeit(){
+  var d = new Date(), z = function(n){ return (n < 10 ? "0" : "") + n; };
+  return z(d.getHours()) + ":" + z(d.getMinutes()) + " Uhr";
+}
+/* haengt die Meldung an, damit die Warnung zur angefangenen Position stehen bleibt */
+function abgabeMelden(stufe, titel, text){
+  var b = [[stufe, titel, text]];
+  if (A.fotos.length || $("f-bez").value.trim() || A.obj)
+    b.unshift(["warn", "Oben steht eine angefangene Position.", "Sie ist noch nicht gespeichert und steht nicht in der Datei."]);
+  befundeZeigen(b, "abgabebefund");
+  $("abgabebefund").scrollIntoView({block: "nearest"});
+}
 try {
   if (navigator.canShare && navigator.canShare({files: [new File(["x"], "x.json", {type: "application/json"})]})) {
     $("b-teilen").classList.remove("versteckt");
     $("b-teilen").onclick = function(){
       if (!abgabePruefen()) return;
-      navigator.share({files: [alsDatei()], title: "Bestandserfassung"}).catch(function(){});
+      var datei = alsDatei();
+      navigator.share({files: [datei], title: "Bestandserfassung"}).then(function(){
+        abgabeMelden("ok", "Datei übergeben: " + datei.name,
+          Z.positionen.length + " Positionen um " + uhrzeit() + " an die gewählte App gegeben. " +
+          "Die Positionen bleiben hier stehen, bis Sie sie unten löschen.");
+        if (navigator.vibrate) navigator.vibrate([120, 80, 120]);
+        setTimeout(function(){
+          alert("Datei übergeben.\n\n" + Z.positionen.length + " Positionen, " + uhrzeit() + "\n" + datei.name);
+        }, 150);
+      }).catch(function(){
+        abgabeMelden("warn", "Teilen abgebrochen – die Datei ist nicht rausgegangen.",
+          "Bitte noch einmal auf Teilen tippen und ein Ziel wählen, oder die Datei speichern.");
+      });
     };
   }
 } catch (x) {}
