@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bestandserfassung</title>
+<meta name="theme-color" content="#179C7D">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--gruen:#179C7D;--dunkel:#0d6b52;--text:#15181b;--grau:#5d666e;--linie:#cfd5da;--flaeche:#f3f5f6;
+  --rot:#b3261e;--gelb:#8a5a00;--gelbf:#fff6df;--rotf:#fdecea;--gruenf:#e6f3ef}
+*{box-sizing:border-box}
+html{background:var(--flaeche)}
+body{margin:0 auto;max-width:720px;color:var(--text);font:17px/1.45 "Segoe UI",Roboto,Arial,sans-serif;
+  padding-bottom:110px}
+header{background:var(--gruen);color:#fff;padding:14px 16px 12px;position:sticky;top:0;z-index:5}
+header h1{font-size:20px;margin:0}
+header .stand{font-size:13px;opacity:.9}
+main{padding:12px 12px 0}
+.karte{background:#fff;border:1px solid var(--linie);border-radius:10px;padding:14px;margin-bottom:12px}
+.karte h2{font-size:17px;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+.nr{flex:none;width:28px;height:28px;border-radius:50%;background:var(--text);color:#fff;font-size:15px;
+  font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+.nr.ok{background:var(--gruen)}
+label{display:block;font-weight:600;margin:10px 0 4px}
+input[type=text],select,textarea{width:100%;font:inherit;padding:12px;border:2px solid var(--linie);
+  border-radius:8px;background:#fff;color:var(--text)}
+input:focus,select:focus,textarea:focus{outline:3px solid #9bd6c6;border-color:var(--gruen)}
+textarea{min-height:64px;resize:vertical}
+button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:14px 16px;min-height:52px;
+  background:var(--gruen);color:#fff;width:100%;cursor:pointer}
+button.zweit{background:#fff;color:var(--dunkel);border:2px solid var(--gruen)}
+button.klein{width:auto;min-height:40px;padding:8px 12px;font-size:15px}
+button.weg{background:#fff;color:var(--rot);border:2px solid var(--rot)}
+button:disabled{background:#c4cbd0;color:#fff;border-color:#c4cbd0}
+.reihe{display:flex;gap:8px}.reihe>*{flex:1}
+.hinweis{font-size:14.5px;color:var(--grau);margin:6px 0 0}
+.ort{font:700 22px Consolas,"Courier New",monospace;letter-spacing:.5px}
+.ortname{font-size:14.5px;color:var(--grau)}
+.befund{border-left:5px solid;padding:9px 12px;margin:8px 0;border-radius:4px;font-size:15px}
+.befund b{display:block}
+.befund.error{border-color:var(--rot);background:var(--rotf)}
+.befund.warn{border-color:#e0a100;background:var(--gelbf)}
+.befund.ok{border-color:var(--gruen);background:var(--gruenf)}
+.fotos{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.foto{position:relative;width:96px;height:96px;border-radius:8px;overflow:hidden;border:1px solid var(--linie)}
+.foto img{width:100%;height:100%;object-fit:cover;display:block}
+.foto button{position:absolute;right:2px;top:2px;width:30px;height:30px;min-height:0;padding:0;border-radius:50%;
+  background:rgba(0,0,0,.65);font-size:18px;line-height:1}
+details{margin-top:10px}summary{cursor:pointer;color:var(--dunkel);font-weight:600;padding:6px 0}
+.pos{display:grid;grid-template-columns:64px 1fr auto;gap:10px;align-items:center;padding:10px 0;
+  border-top:1px solid var(--linie)}
+.pos:first-of-type{border-top:0}
+.pos img{width:64px;height:64px;object-fit:cover;border-radius:6px}
+.pos .t{font-weight:600}.pos .u{font-size:14px;color:var(--grau)}
+.leiste{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:2px solid var(--gruen);padding:10px 12px;
+  z-index:6}
+.leiste .in{max-width:696px;margin:0 auto;display:flex;gap:8px;align-items:center}
+.leiste .zahl{flex:none;font-weight:700;min-width:84px}
+video{width:100%;border-radius:8px;background:#000;max-height:50vh}
+#scanfeld{display:none;margin-top:8px}
+.versteckt{display:none!important}
+</style>
+</head>
+<body>
+<header>
+  <h1>Bestandserfassung</h1>
+  <div class="stand">Labor MBS · Lagerorte Stand <span id="kopfstand"></span> · läuft ohne Netz</div>
+</header>
+<main>
+
+<div class="karte" id="k-wer">
+  <h2>Wer erfasst?</h2>
+  <input type="text" id="f-wer" placeholder="Ihr Name" autocomplete="name">
+  <p class="hinweis">Der Name steht später an jeder Position. Nur so kann jemand nachfragen, wenn ein Foto
+  nicht reicht.</p>
+  <div id="speicherhinweis"></div>
+</div>
+
+<div class="karte" id="k-neu">
+  <h2><span class="nr" id="n1">1</span> Wo liegt es?</h2>
+  <div id="ortanzeige" class="versteckt"><div class="ort" id="ortcode"></div><div class="ortname" id="ortname"></div></div>
+  <div class="reihe" id="scanknoepfe">
+    <button type="button" id="b-scan">Fach scannen</button>
+    <button type="button" class="zweit" id="b-scanfoto">Scan per Foto</button>
+  </div>
+  <div id="scanfeld"><video id="video" playsinline muted></video>
+    <button type="button" class="zweit" id="b-scanstop" style="margin-top:8px">Scannen beenden</button></div>
+  <input type="file" id="i-scanfoto" accept="image/*" capture="environment" class="versteckt">
+  <label for="f-ort" id="l-ort">oder Nummer eintippen bzw. auswählen</label>
+  <input type="text" id="f-ort" list="ortliste" placeholder="z. B. WSA05-2-L" autocapitalize="characters"
+         autocomplete="off" spellcheck="false">
+  <datalist id="ortliste"></datalist>
+  <p class="hinweis" id="h-ort">Scannen Sie den <b>kleinen Aufkleber am Fach</b>, nicht das große Schild an der Tür. Das Fach
+  sagt genauer, wo das Teil liegt. Der Ort bleibt für die nächste Position stehen.</p>
+  <div id="ortbefund"></div>
+
+  <h2 style="margin-top:18px"><span class="nr" id="n2">2</span> Foto</h2>
+  <button type="button" id="b-foto">Foto aufnehmen</button>
+  <input type="file" id="i-foto" accept="image/*" capture="environment" class="versteckt">
+  <div class="fotos" id="fotos"></div>
+  <p class="hinweis">Aus dem Foto werden Hersteller, Artikelnummer und Charge gelesen. Am besten zwei Bilder:
+  eines vom ganzen Teil und <b>eines vom Etikett, so nah, dass die Schrift scharf ist</b>.</p>
+
+  <h2 style="margin-top:18px"><span class="nr" id="n3">3</span> Was ist es?</h2>
+  <label for="f-gruppe">Gruppe</label>
+  <select id="f-gruppe"></select>
+  <input type="text" id="f-gruppefrei" class="versteckt" placeholder="Gruppe in eigenen Worten" style="margin-top:8px">
+  <label for="f-bez">Bezeichnung</label>
+  <input type="text" id="f-bez" placeholder="z. B. PC-Folie 250 µm, Rolle">
+  <p class="hinweis">So, wie Sie es einer Kollegin zurufen würden. Was auf dem Etikett steht, müssen Sie nicht
+  abschreiben, das steht auf dem Foto.</p>
+  <details>
+    <summary>Weitere Angaben (freiwillig)</summary>
+    <label for="f-menge">Menge</label>
+    <input type="text" id="f-menge" placeholder="z. B. 3 Rollen, 1 Karton, halb voll">
+    <label for="f-bem">Bemerkung</label>
+    <textarea id="f-bem" placeholder="z. B. angebrochen, gehört eigentlich nach WSA07, unklar was es ist"></textarea>
+  </details>
+
+  <div id="befunde"></div>
+  <button type="button" id="b-speichern" style="margin-top:12px">Position speichern</button>
+  <button type="button" class="zweit versteckt" id="b-abbrechen" style="margin-top:8px">Änderung verwerfen</button>
+</div>
+
+<div class="karte">
+  <h2>Erfasst <span id="anzahl" style="font-weight:400;color:var(--grau)"></span></h2>
+  <div id="liste"><p class="hinweis">Noch nichts erfasst.</p></div>
+</div>
+
+<div class="karte">
+  <h2>Fertig?</h2>
+  <p class="hinweis" style="margin-top:0">Die Datei enthält alle Positionen mit ihren Fotos. Legen Sie sie in den
+  Upload-Ordner des Labors. Das Werkzeug behält die Positionen, bis Sie sie unten ausdrücklich leeren.</p>
+  <div id="abgabebefund"></div>
+  <button type="button" id="b-teilen" class="versteckt">Datei teilen</button>
+  <button type="button" id="b-laden" class="zweit" style="margin-top:8px">Datei herunterladen</button>
+  <a id="a-upload" class="versteckt" target="_blank" rel="noopener"><button type="button" class="zweit"
+     style="margin-top:8px">Upload-Ordner öffnen</button></a>
+  <details><summary>Alles leeren</summary>
+    <p class="hinweis">Erst leeren, wenn die Datei sicher im Upload-Ordner liegt. Das lässt sich nicht
+    zurückholen.</p>
+    <button type="button" class="weg" id="b-leeren">Alle Positionen löschen</button>
+  </details>
+</div>
+</main>
+
+<div class="leiste"><div class="in">
+  <span class="zahl" id="leistezahl">0 Positionen</span>
+  <button type="button" id="b-nachoben" class="zweit">Neue Position</button>
+</div></div>
+
+<script>
+"use strict";
+var STAMM = {"stand":"30.09.2026","orte":[["RCA1-1","CNC-Rollcontainer 1, Fach 1"],["RCA1-2","CNC-Rollcontainer 1, Fach 2"],["RCA1-3","CNC-Rollcontainer 1, Fach 3"],["RCA1-4","CNC-Rollcontainer 1, Fach 4"],["RCA2-1","CNC-Rollcontainer 2, Fach 1"],["RCA2-2","CNC-Rollcontainer 2, Fach 2"],["RCA2-3","CNC-Rollcontainer 2, Fach 3"],["RCA2-4","CNC-Rollcontainer 2, Fach 4"],["RCA3-1","CNC-Rollcontainer 3, Fach 1"],["RCA3-2","CNC-Rollcontainer 3, Fach 2"],["RCA3-3","CNC-Rollcontainer 3, Fach 3"],["RCA3-4","CNC-Rollcontainer 3, Fach 4"],["RCA4-1","CNC-Rollcontainer 4, Fach 1"],["RCA4-2","CNC-Rollcontainer 4, Fach 2"],["RCA4-3","CNC-Rollcontainer 4, Fach 3"],["RCA4-4","CNC-Rollcontainer 4, Fach 4"],["RCA5-1","Rollcontainer 5, Fach 1"],["RCA5-2","Rollcontainer 5, Fach 2"],["RCA5-3","Rollcontainer 5, Fach 3"],["KSA1-1","Kühlschrank A117, Kühlteil, Fach 1"],["KSA1-2","Kühlschrank A117, Kühlteil, Fach 2"],["KSA1-3","Kühlschrank A117, Kühlteil, Fach 3"],["KSA1-4","Kühlschrank A117, Kühlteil, Fach 4"],["KSA1-5","Kühlschrank A117, Kühlteil, Fach 5"],["KSA1-6","Kühlschrank A117, Kühlteil, Fach 6"],["KSA1-7","Kühlschrank A117, Kühlteil, Fach 7"],["KSA1-8","Kühlschrank A117, Kühlteil, Fach 8"],["KSA2-1","Kühlschrank A117, Gefrierteil, Fach 1"],["KSA2-2","Kühlschrank A117, Gefrierteil, Fach 2"],["WSA01-1-L","Kleiner Schrank A117, Bereich 1, Fach 1 links"],["WSA01-1-R","Kleiner Schrank A117, Bereich 1, Fach 1 rechts"],["WSA01-2-L","Kleiner Schrank A117, Bereich 1, Fach 2 links"],["WSA01-2-R","Kleiner Schrank A117, Bereich 1, Fach 2 rechts"],["WSA02-1-L","Kleiner Schrank A117, Bereich 2, Fach 1 links"],["WSA02-1-R","Kleiner Schrank A117, Bereich 2, Fach 1 rechts"],["WSA02-2-L","Kleiner Schrank A117, Bereich 2, Fach 2 links"],["WSA02-2-R","Kleiner Schrank A117, Bereich 2, Fach 2 rechts"],["WSA03-1-L","Kleiner Schrank A117, Bereich 3, Fach 1 links"],["WSA03-1-R","Kleiner Schrank A117, Bereich 3, Fach 1 rechts"],["WSA03-2-L","Kleiner Schrank A117, Bereich 3, Fach 2 links"],["WSA03-2-R","Kleiner Schrank A117, Bereich 3, Fach 2 rechts"],["WSA04-1-L","Schrankwand A117, Bereich 4, Fach 1 links"],["WSA04-1-R","Schrankwand A117, Bereich 4, Fach 1 rechts"],["WSA05-1-L","Schrankwand A117, Bereich 5, Fach 1 links"],["WSA05-1-R","Schrankwand A117, Bereich 5, Fach 1 rechts"],["WSA05-2-L","Schrankwand A117, Bereich 5, Fach 2 links"],["WSA05-2-R","Schrankwand A117, Bereich 5, Fach 2 rechts"],["WSA05-3-L","Schrankwand A117, Bereich 5, Fach 3 links"],["WSA05-3-R","Schrankwand A117, Bereich 5, Fach 3 rechts"],["WSA05-4-L","Schrankwand A117, Bereich 5, Fach 4 links"],["WSA05-4-R","Schrankwand A117, Bereich 5, Fach 4 rechts"],["WSA06-1-L","Schrankwand A117, Bereich 6, Fach 1 links"],["WSA06-1-R","Schrankwand A117, Bereich 6, Fach 1 rechts"],["WSA07-1-L","Schrankwand A117, Bereich 7, Fach 1 links"],["WSA07-1-R","Schrankwand A117, Bereich 7, Fach 1 rechts"],["WSA07-2-L","Schrankwand A117, Bereich 7, Fach 2 links"],["WSA07-2-R","Schrankwand A117, Bereich 7, Fach 2 rechts"],["WSA07-3-L","Schrankwand A117, Bereich 7, Fach 3 links"],["WSA07-3-R","Schrankwand A117, Bereich 7, Fach 3 rechts"],["WSA08-1","Schrankwand A117, Bereich 8, Fach 1"],["WSA09-1","Schrankwand A117, Bereich 9, Fach 1"],["WSA10-1","Schrankwand A117, Bereich 10, Fach 1"],["WSA11-1","Schrankwand A117, Bereich 11, Fach 1"],["WSA12-1-L","Schrankwand A117, Bereich 12, Fach 1 links"],["WSA12-1-R","Schrankwand A117, Bereich 12, Fach 1 rechts"],["WSA13-1","Schrankwand A117, Bereich 13, Fach 1"],["WSA13-2","Schrankwand A117, Bereich 13, Fach 2"],["WSA13-3","Schrankwand A117, Bereich 13, Fach 3"],["WSA13-4","Schrankwand A117, Bereich 13, Fach 4"],["WSA13-5","Schrankwand A117, Bereich 13, Fach 5"],["WSA13-6","Schrankwand A117, Bereich 13, Fach 6"],["WSA14-1","Schrankwand A117, Bereich 14, Fach 1"],["WSA14-2","Schrankwand A117, Bereich 14, Fach 2"],["WSA14-3","Schrankwand A117, Bereich 14, Fach 3"],["WSA14-4","Schrankwand A117, Bereich 14, Fach 4"],["WSA14-5","Schrankwand A117, Bereich 14, Fach 5"],["WSA14-6","Schrankwand A117, Bereich 14, Fach 6"],["WSA15-1","Schrankwand A117, Bereich 15, Fach 1"],["WSA15-2","Schrankwand A117, Bereich 15, Fach 2"],["WSA15-3","Schrankwand A117, Bereich 15, Fach 3"],["WSA15-4","Schrankwand A117, Bereich 15, Fach 4"],["WSA15-5","Schrankwand A117, Bereich 15, Fach 5"],["WSA15-6","Schrankwand A117, Bereich 15, Fach 6"],["WSA16-1","Schrankwand A117, Bereich 16, Fach 1"],["WSA16-2","Schrankwand A117, Bereich 16, Fach 2"],["WSA16-3","Schrankwand A117, Bereich 16, Fach 3"],["WSA16-4","Schrankwand A117, Bereich 16, Fach 4"],["WSA16-5","Schrankwand A117, Bereich 16, Fach 5"],["WSA16-6","Schrankwand A117, Bereich 16, Fach 6"],["WSA17-1-L","Schrankwand A117, Bereich 17, Fach 1 links"],["WSA17-1-R","Schrankwand A117, Bereich 17, Fach 1 rechts"],["WSA18-1-L","Schrankwand A117, Bereich 18, Fach 1 links"],["WSA18-1-R","Schrankwand A117, Bereich 18, Fach 1 rechts"],["WSA18-2-L","Schrankwand A117, Bereich 18, Fach 2 links"],["WSA18-2-R","Schrankwand A117, Bereich 18, Fach 2 rechts"],["WSA18-3-L","Schrankwand A117, Bereich 18, Fach 3 links"],["WSA18-3-R","Schrankwand A117, Bereich 18, Fach 3 rechts"],["WSA18-4-L","Schrankwand A117, Bereich 18, Fach 4 links"],["WSA18-4-R","Schrankwand A117, Bereich 18, Fach 4 rechts"],["WSA18-5-L","Schrankwand A117, Bereich 18, Fach 5 links"],["WSA18-5-R","Schrankwand A117, Bereich 18, Fach 5 rechts"],["WBA1-1","Schrank unter dem Waschbecken, Fach 1"],["WBA2-1","Ausziehschrank mit Mülleimer unter dem Waschbecken, Fach 1"],["ABA1-1","Sammelbehälter kontaminierter Feststoffabfall, Fach 1"],["LSA1-1","Lösemittelschrank CNC8 unter dem Digestorium, Bereich 1, Fach 1"],["LSA2-1","Lösemittelschrank CNC8 unter dem Digestorium, Bereich 2, Fach 1"],["EXA1-1-L","Sicherheitsschrank CNC8 unter dem Wärmeschrank, Fach 1 links"],["EXA1-1-R","Sicherheitsschrank CNC8 unter dem Wärmeschrank, Fach 1 rechts"],["SSA01-1","Schubladenschrank CNC8, Bereich 1, Fach 1"],["SSA02-1","Schubladenschrank CNC8, Bereich 2, Fach 1"],["SSA03-1","Schubladenschrank CNC8, Bereich 3, Fach 1"],["SSA04-1","Schubladenschrank CNC8, Bereich 4, Fach 1"],["SSA05-1","Schubladenschrank CNC8, Bereich 5, Fach 1"],["SSA06-1","Schubladenschrank CNC8, Bereich 6, Fach 1"],["SSA06-2","Schubladenschrank CNC8, Bereich 6, Fach 2"],["STA1-1","Schrank-Tisch-Kombination A117, Bereich 1, Fach 1"],["STA1-2","Schrank-Tisch-Kombination A117, Bereich 1, Fach 2"],["STA2-1","Schrank-Tisch-Kombination A117, Bereich 2, Fach 1"],["STA2-2","Schrank-Tisch-Kombination A117, Bereich 2, Fach 2"],["RCA1","CNC-Rollcontainer 1"],["RCA2","CNC-Rollcontainer 2"],["RCA3","CNC-Rollcontainer 3"],["RCA4","CNC-Rollcontainer 4"],["RCA5","Rollcontainer 5"],["KSA1","Kühlschrank A117, Kühlteil"],["KSA2","Kühlschrank A117, Gefrierteil"],["RLB1","Regallager 1"],["RLB2","Regallager 2"],["RLB3","Regallager 3"],["WSA01","Kleiner Schrank A117, Bereich 1"],["WSA01-L","Kleiner Schrank A117, Bereich 1, Tür links"],["WSA01-R","Kleiner Schrank A117, Bereich 1, Tür rechts"],["WSA02","Kleiner Schrank A117, Bereich 2"],["WSA02-L","Kleiner Schrank A117, Bereich 2, Tür links"],["WSA02-R","Kleiner Schrank A117, Bereich 2, Tür rechts"],["WSA03","Kleiner Schrank A117, Bereich 3"],["WSA03-L","Kleiner Schrank A117, Bereich 3, Tür links"],["WSA03-R","Kleiner Schrank A117, Bereich 3, Tür rechts"],["WSA04","Schrankwand A117, Bereich 4"],["WSA04-L","Schrankwand A117, Bereich 4, Tür links"],["WSA04-R","Schrankwand A117, Bereich 4, Tür rechts"],["WSA05","Schrankwand A117, Bereich 5"],["WSA05-L","Schrankwand A117, Bereich 5, Tür links"],["WSA05-R","Schrankwand A117, Bereich 5, Tür rechts"],["WSA06","Schrankwand A117, Bereich 6"],["WSA06-L","Schrankwand A117, Bereich 6, Tür links"],["WSA06-R","Schrankwand A117, Bereich 6, Tür rechts"],["WSA07","Schrankwand A117, Bereich 7"],["WSA07-L","Schrankwand A117, Bereich 7, Tür links"],["WSA07-R","Schrankwand A117, Bereich 7, Tür rechts"],["WSA08","Schrankwand A117, Bereich 8"],["WSA09","Schrankwand A117, Bereich 9"],["WSA10","Schrankwand A117, Bereich 10"],["WSA11","Schrankwand A117, Bereich 11"],["WSA12","Schrankwand A117, Bereich 12"],["WSA12-L","Schrankwand A117, Bereich 12, Tür links"],["WSA12-R","Schrankwand A117, Bereich 12, Tür rechts"],["WSA13","Schrankwand A117, Bereich 13"],["WSA14","Schrankwand A117, Bereich 14"],["WSA15","Schrankwand A117, Bereich 15"],["WSA16","Schrankwand A117, Bereich 16"],["WSA17","Schrankwand A117, Bereich 17"],["WSA17-L","Schrankwand A117, Bereich 17, Tür links"],["WSA17-R","Schrankwand A117, Bereich 17, Tür rechts"],["WSA18","Schrankwand A117, Bereich 18"],["WSA18-L","Schrankwand A117, Bereich 18, Tür links"],["WSA18-R","Schrankwand A117, Bereich 18, Tür rechts"],["WBA1","Schrank unter dem Waschbecken"],["WBA2","Ausziehschrank mit Mülleimer unter dem Waschbecken"],["ABA1","Sammelbehälter kontaminierter Feststoffabfall"],["LSA1","Lösemittelschrank CNC8 unter dem Digestorium, Bereich 1"],["LSA2","Lösemittelschrank CNC8 unter dem Digestorium, Bereich 2"],["EXA1","Sicherheitsschrank CNC8 unter dem Wärmeschrank"],["EXA1-L","Sicherheitsschrank CNC8 unter dem Wärmeschrank, Tür links"],["EXA1-R","Sicherheitsschrank CNC8 unter dem Wärmeschrank, Tür rechts"],["SSA01","Schubladenschrank CNC8, Bereich 1"],["SSA02","Schubladenschrank CNC8, Bereich 2"],["SSA03","Schubladenschrank CNC8, Bereich 3"],["SSA04","Schubladenschrank CNC8, Bereich 4"],["SSA05","Schubladenschrank CNC8, Bereich 5"],["SSA06","Schubladenschrank CNC8, Bereich 6"],["STA1","Schrank-Tisch-Kombination A117, Bereich 1"],["STA2","Schrank-Tisch-Kombination A117, Bereich 2"]],"gruppen":["Folie","Platte / Halbzeug","Klebeband / Klebefolie","Membran / Filter","Fertigteil / Chip","Verbrauchsmaterial","Glas- und Laborgerät","Chemikalie","Werkzeug","Messmittel","Gerät / Anlagenzubehör","Schutzausrüstung","Verpackung","Entsorgung"],"upload":""};
+var ORT = {};                       // Code -> Bezeichnung
+STAMM.orte.forEach(function(o){ ORT[o[0]] = o[1]; });
+var Z = {wer:"", positionen:[], naechste:1};      // der ganze Zustand
+var A = {ort:"", quelle:"", fotos:[], bearbeite:null};   // die Position in Arbeit
+function $(id){ return document.getElementById(id); }
+function esc(t){ return String(t == null ? "" : t).replace(/[&<>"]/g, function(c){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
+
+/* ---------- Speichern im Geraet: IndexedDB, weil Fotos zu gross fuer localStorage sind ---------- */
+var DB = null, SPEICHER_OK = false;
+function dbOeffnen(fertig){
+  try {
+    var r = indexedDB.open("bestandserfassung", 1);
+    r.onupgradeneeded = function(){ r.result.createObjectStore("zustand"); };
+    r.onsuccess = function(){ DB = r.result; SPEICHER_OK = true; fertig(); };
+    r.onerror = function(){ fertig(); };
+  } catch (x) { fertig(); }
+}
+function sichern(){
+  if (!DB) return;
+  try { DB.transaction("zustand", "readwrite").objectStore("zustand").put(Z, "z"); } catch (x) { SPEICHER_OK = false; speicherHinweis(); }
+}
+function laden(fertig){
+  if (!DB) return fertig();
+  try {
+    var q = DB.transaction("zustand").objectStore("zustand").get("z");
+    q.onsuccess = function(){ if (q.result && q.result.positionen) Z = q.result; fertig(); };
+    q.onerror = function(){ fertig(); };
+  } catch (x) { fertig(); }
+}
+function speicherHinweis(){
+  $("speicherhinweis").innerHTML = SPEICHER_OK ? "" :
+    '<div class="befund warn"><b>Dieses Handy merkt sich die Positionen nicht.</b>' +
+    'Lassen Sie diese Seite offen, bis Sie die Datei erzeugt haben. Schließen oder Neuladen löscht alles.</div>';
+}
+
+/* ---------- Lagerort ---------- */
+function ortNormal(t){ return String(t || "").trim().toUpperCase().replace(/\s+/g, ""); }
+function ortSetzen(code, quelle){
+  code = ortNormal(code);
+  A.ort = code; A.quelle = code ? quelle : "";
+  $("f-ort").value = code;
+  $("ortanzeige").classList.toggle("versteckt", !code);
+  $("ortcode").textContent = code;
+  $("ortname").textContent = ORT[code] || "";
+  var b = "";
+  if (code && !ORT[code]) {
+    b = '<div class="befund warn"><b>„' + esc(code) + '“ steht nicht in der Liste dieses Werkzeugs.</b>' +
+        'Wenn die Nummer so auf dem Aufkleber steht, ist das in Ordnung: Der Ort ist neuer als diese Datei. ' +
+        'Sonst bitte noch einmal scannen oder Tippfehler prüfen.</div>';
+  }
+  $("ortbefund").innerHTML = b;
+  marken();
+}
+$("f-ort").addEventListener("change", function(){ ortSetzen(this.value, "getippt"); });
+
+var SCAN = ("BarcodeDetector" in window);
+var detektor = null, strom = null, scanAktiv = false;
+function scanMeldung(text){
+  $("ortbefund").innerHTML = '<div class="befund warn"><b>' + esc(text) + '</b>' +
+    'Tippen Sie die Nummer vom Aufkleber ein oder wählen Sie sie aus der Liste.</div>';
+}
+function scanStart(){
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { $("i-scanfoto").click(); return; }
+  navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}}).then(function(s){
+    strom = s; scanAktiv = true;
+    $("video").srcObject = s; $("video").play();
+    $("scanfeld").style.display = "block";
+    scanSchleife();
+  }).catch(function(){ $("i-scanfoto").click(); });     // Kamera verweigert: Standfoto geht fast immer
+}
+function scanStop(){
+  scanAktiv = false;
+  if (strom) strom.getTracks().forEach(function(t){ t.stop(); });
+  strom = null; $("scanfeld").style.display = "none";
+}
+function scanSchleife(){
+  if (!scanAktiv) return;
+  detektor.detect($("video")).then(function(f){
+    if (f.length && f[0].rawValue) { scanStop(); ortSetzen(f[0].rawValue, "scan"); }
+    else setTimeout(scanSchleife, 250);
+  }).catch(function(){ setTimeout(scanSchleife, 400); });
+}
+if (SCAN) {
+  try { detektor = new BarcodeDetector({formats:["data_matrix", "qr_code"]}); } catch (x) { SCAN = false; }
+}
+if (!SCAN) {
+  // Ohne Scanner darf die Seite nicht so tun, als gaebe es einen.
+  $("scanknoepfe").classList.add("versteckt");
+  $("l-ort").textContent = "Nummer vom Aufkleber eintippen oder auswählen";
+  $("h-ort").innerHTML = "Dieses Handy kann den Code nicht selbst lesen. Die Nummer steht in Klarschrift " +
+    "neben dem Code, z. B. <b>WSA05-2-L</b>. Nehmen Sie den <b>kleinen Aufkleber am Fach</b>, nicht das große " +
+    "Schild an der Tür. Der Ort bleibt für die nächste Position stehen.";
+} else {
+  $("b-scan").onclick = scanStart;
+  $("b-scanstop").onclick = scanStop;
+  $("b-scanfoto").onclick = function(){ $("i-scanfoto").click(); };
+  $("i-scanfoto").onchange = function(){
+    var d = this.files[0]; this.value = "";
+    if (!d) return;
+    createImageBitmap(d).then(function(b){ return detektor.detect(b); }).then(function(f){
+      if (f.length && f[0].rawValue) ortSetzen(f[0].rawValue, "scan");
+      else scanMeldung("Auf dem Foto war kein Code zu erkennen.");
+    }).catch(function(){ scanMeldung("Das Foto ließ sich nicht auswerten."); });
+  };
+}
+
+/* ---------- Fotos: verkleinern und in die Position legen ---------- */
+var MAXKANTE = 1400, GUETE = 0.8;
+function verkleinern(datei, fertig){
+  var url = URL.createObjectURL(datei), bild = new Image();
+  bild.onload = function(){
+    var f = Math.min(1, MAXKANTE / Math.max(bild.naturalWidth, bild.naturalHeight));
+    var b = Math.round(bild.naturalWidth * f), h = Math.round(bild.naturalHeight * f);
+    var c = document.createElement("canvas"); c.width = b; c.height = h;
+    c.getContext("2d").drawImage(bild, 0, 0, b, h);
+    URL.revokeObjectURL(url);
+    fertig({daten: c.toDataURL("image/jpeg", GUETE), breite: b, hoehe: h});
+  };
+  bild.onerror = function(){ URL.revokeObjectURL(url); fertig(null); };
+  bild.src = url;
+}
+$("b-foto").onclick = function(){ $("i-foto").click(); };
+$("i-foto").onchange = function(){
+  var d = this.files[0]; this.value = "";
+  if (!d) return;
+  verkleinern(d, function(f){
+    if (!f) { $("befunde").innerHTML = '<div class="befund error"><b>Das Foto ließ sich nicht lesen.</b>' +
+      'Bitte noch einmal aufnehmen.</div>'; return; }
+    A.fotos.push(f); fotosZeigen(); marken();
+  });
+};
+function fotosZeigen(){
+  $("fotos").innerHTML = A.fotos.map(function(f, i){
+    return '<div class="foto"><img src="' + f.daten + '" alt="Foto ' + (i + 1) + '">' +
+           '<button type="button" data-i="' + i + '" aria-label="Foto entfernen">×</button></div>'; }).join("");
+  $("b-foto").textContent = A.fotos.length ? "Weiteres Foto aufnehmen" : "Foto aufnehmen";
+}
+$("fotos").addEventListener("click", function(e){
+  var i = e.target.getAttribute && e.target.getAttribute("data-i");
+  if (i !== null && i !== undefined) { A.fotos.splice(Number(i), 1); fotosZeigen(); marken(); }
+});
+
+/* ---------- Gruppe: jede Auswahl endet mit Freitext ---------- */
+var FREI = "__frei__";
+$("f-gruppe").innerHTML = '<option value="">bitte wählen</option>' +
+  STAMM.gruppen.map(function(g){ return '<option>' + esc(g) + '</option>'; }).join("") +
+  '<option value="' + FREI + '">etwas anderes …</option>';
+$("f-gruppe").onchange = function(){
+  $("f-gruppefrei").classList.toggle("versteckt", this.value !== FREI); marken(); };
+function gruppe(){ var v = $("f-gruppe").value; return v === FREI ? $("f-gruppefrei").value.trim() : v; }
+
+/* ---------- Pruefen und speichern ---------- */
+function marken(){
+  $("n1").classList.toggle("ok", !!A.ort);
+  $("n2").classList.toggle("ok", A.fotos.length > 0);
+  $("n3").classList.toggle("ok", !!gruppe() && !!$("f-bez").value.trim());
+}
+["f-bez", "f-gruppefrei"].forEach(function(id){ $(id).addEventListener("input", marken); });
+function pruefen(){
+  var b = [];
+  if (!$("f-wer").value.trim()) b.push(["error", "Ihr Name fehlt.", "Ganz oben eintragen. Er wird nur einmal gebraucht."]);
+  if (!A.ort) b.push(["error", "Der Lagerort fehlt.", "Fach scannen oder die Nummer vom Aufkleber eintippen."]);
+  if (!A.fotos.length) b.push(["error", "Es gibt noch kein Foto.", "Mindestens eines aufnehmen, am besten mit lesbarem Etikett."]);
+  if (!gruppe()) b.push(["error", "Die Gruppe fehlt.", "Aus der Liste wählen oder „etwas anderes“ und selbst benennen."]);
+  if (!$("f-bez").value.trim()) b.push(["error", "Die Bezeichnung fehlt.", "Ein paar Worte reichen, z. B. „PC-Folie 250 µm“."]);
+  return b;
+}
+function befundeZeigen(b, ziel){
+  $(ziel).innerHTML = b.map(function(x){
+    return '<div class="befund ' + x[0] + '"><b>' + esc(x[1]) + '</b>' + esc(x[2]) + '</div>'; }).join("");
+}
+function felderLeeren(){
+  A.fotos = []; A.bearbeite = null;
+  ["f-bez", "f-menge", "f-bem", "f-gruppefrei"].forEach(function(id){ $(id).value = ""; });
+  $("f-gruppe").value = ""; $("f-gruppefrei").classList.add("versteckt");
+  $("b-speichern").textContent = "Position speichern";
+  $("b-abbrechen").classList.add("versteckt");
+  fotosZeigen(); marken();
+}
+$("b-speichern").onclick = function(){
+  var b = pruefen();
+  befundeZeigen(b, "befunde");
+  if (b.length) return;
+  Z.wer = $("f-wer").value.trim();
+  var p = {lagerort: A.ort, lagerort_quelle: A.quelle, lagerort_bekannt: !!ORT[A.ort], gruppe: gruppe(),
+           bezeichnung: $("f-bez").value.trim(), menge: $("f-menge").value.trim(),
+           bemerkung: $("f-bem").value.trim(), fotos: A.fotos.slice(), erfasst: new Date().toISOString()};
+  if (A.bearbeite !== null) {
+    p.lfd = Z.positionen[A.bearbeite].lfd; Z.positionen[A.bearbeite] = p;
+  } else {
+    p.lfd = Z.naechste++; Z.positionen.push(p);
+  }
+  sichern(); felderLeeren(); listeZeigen();
+  befundeZeigen([["ok", "Position " + p.lfd + " gespeichert.", "Der Lagerort " + p.lagerort + " bleibt für die nächste Position stehen."]], "befunde");
+  window.scrollTo({top: $("k-neu").offsetTop - 70, behavior: "smooth"});
+};
+$("b-abbrechen").onclick = function(){ felderLeeren(); $("befunde").innerHTML = ""; };
+$("f-wer").addEventListener("change", function(){ Z.wer = this.value.trim(); sichern(); });
+
+/* ---------- Liste ---------- */
+function listeZeigen(){
+  var n = Z.positionen.length;
+  $("anzahl").textContent = n ? "(" + n + ")" : "";
+  $("leistezahl").textContent = n + (n === 1 ? " Position" : " Positionen");
+  $("liste").innerHTML = n ? Z.positionen.slice().reverse().map(function(p){
+    return '<div class="pos"><img src="' + p.fotos[0].daten + '" alt=""><div><div class="t">' + esc(p.bezeichnung) +
+      '</div><div class="u">' + esc(p.lagerort) + ' · ' + esc(p.gruppe) + ' · ' + p.fotos.length +
+      (p.fotos.length === 1 ? ' Foto' : ' Fotos') + '</div></div>' +
+      '<button type="button" class="zweit klein" data-lfd="' + p.lfd + '">ändern</button></div>'; }).join("")
+    : '<p class="hinweis">Noch nichts erfasst.</p>';
+}
+$("liste").addEventListener("click", function(e){
+  var lfd = e.target.getAttribute && e.target.getAttribute("data-lfd");
+  if (!lfd) return;
+  var i = Z.positionen.findIndex(function(p){ return String(p.lfd) === lfd; });
+  if (i < 0) return;
+  var p = Z.positionen[i];
+  A.bearbeite = i; A.fotos = p.fotos.slice();
+  ortSetzen(p.lagerort, p.lagerort_quelle);
+  var bekannt = STAMM.gruppen.indexOf(p.gruppe) >= 0;
+  $("f-gruppe").value = bekannt ? p.gruppe : FREI;
+  $("f-gruppefrei").classList.toggle("versteckt", bekannt);
+  $("f-gruppefrei").value = bekannt ? "" : p.gruppe;
+  $("f-bez").value = p.bezeichnung; $("f-menge").value = p.menge; $("f-bem").value = p.bemerkung;
+  $("b-speichern").textContent = "Änderung an Position " + p.lfd + " speichern";
+  $("b-abbrechen").classList.remove("versteckt");
+  fotosZeigen(); marken();
+  window.scrollTo({top: $("k-neu").offsetTop - 70, behavior: "smooth"});
+});
+$("b-nachoben").onclick = function(){ window.scrollTo({top: $("k-neu").offsetTop - 70, behavior: "smooth"}); };
+
+/* ---------- Abgabe ---------- */
+function paket(){
+  return {art: "bestandserfassung", format: 1, werkzeug_stand: STAMM.stand, erfasser: Z.wer,
+          erzeugt: new Date().toISOString(), anzahl: Z.positionen.length, positionen: Z.positionen};
+}
+function dateiname(){
+  var d = new Date(), z = function(n){ return (n < 10 ? "0" : "") + n; };
+  var wer = (Z.wer || "unbekannt").replace(/[^A-Za-z0-9äöüÄÖÜß]+/g, "-");
+  return "Bestand_" + d.getFullYear() + "-" + z(d.getMonth() + 1) + "-" + z(d.getDate()) + "_" +
+         z(d.getHours()) + z(d.getMinutes()) + "_" + wer + ".json";
+}
+function abgabePruefen(){
+  Z.wer = $("f-wer").value.trim();
+  if (!Z.positionen.length) {
+    befundeZeigen([["error", "Es ist noch nichts erfasst.", "Erst mindestens eine Position speichern."]], "abgabebefund");
+    return false;
+  }
+  if (A.fotos.length || $("f-bez").value.trim()) {
+    befundeZeigen([["warn", "Oben steht eine angefangene Position.", "Sie ist noch nicht gespeichert und kommt nicht in die Datei."]], "abgabebefund");
+  } else $("abgabebefund").innerHTML = "";
+  return true;
+}
+function alsDatei(){ return new File([JSON.stringify(paket())], dateiname(), {type: "application/json"}); }
+$("b-laden").onclick = function(){
+  if (!abgabePruefen()) return;
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(alsDatei()); a.download = dateiname();
+  document.body.appendChild(a); a.click(); a.remove();
+};
+try {
+  if (navigator.canShare && navigator.canShare({files: [new File(["x"], "x.json", {type: "application/json"})]})) {
+    $("b-teilen").classList.remove("versteckt");
+    $("b-teilen").onclick = function(){
+      if (!abgabePruefen()) return;
+      navigator.share({files: [alsDatei()], title: "Bestandserfassung"}).catch(function(){});
+    };
+  }
+} catch (x) {}
+if (STAMM.upload) { $("a-upload").href = STAMM.upload; $("a-upload").classList.remove("versteckt"); }
+$("b-leeren").onclick = function(){
+  if (!confirm("Wirklich alle " + Z.positionen.length + " Positionen löschen?")) return;
+  Z.positionen = []; Z.naechste = 1; sichern(); listeZeigen(); $("abgabebefund").innerHTML = "";
+};
+
+/* ---------- Offline: nur wenn die Seite von einer https-Adresse kommt ----------
+   Als lokale Datei gibt es keinen Service Worker - dort laeuft sie ohnehin ohne Netz. */
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  navigator.serviceWorker.register("sw.js").catch(function(){});
+}
+
+/* ---------- Start ---------- */
+$("kopfstand").textContent = STAMM.stand;
+$("ortliste").innerHTML = STAMM.orte.map(function(o){
+  return '<option value="' + esc(o[0]) + '">' + esc(o[1]) + '</option>'; }).join("");
+dbOeffnen(function(){ laden(function(){
+  $("f-wer").value = Z.wer || "";
+  speicherHinweis(); fotosZeigen(); listeZeigen(); marken();
+}); });
+</script>
+</body>
+</html>
