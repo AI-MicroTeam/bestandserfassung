@@ -1,5 +1,5 @@
 // Bestandserfassung - Ablage fuer den Betrieb ohne Netz. Erzeugt, nicht von Hand aendern.
-const ABLAGE = "bestand-eb60a61aa8";
+const ABLAGE = "bestand-18fabe5e66";
 const DATEIEN = ["./", "manifest.webmanifest", "icon-192.png", "icon-512.png"];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(ABLAGE).then(c => c.addAll(DATEIEN)));

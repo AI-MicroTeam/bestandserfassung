@@ -21,6 +21,7 @@ header .stand{font-size:13px;opacity:.9}
 main{padding:12px 12px 0}
 .karte{background:#fff;border:1px solid var(--linie);border-radius:10px;padding:14px;margin-bottom:12px}
 .karte h2{font-size:17px;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+.karte h2 small{font-weight:400;color:var(--grau);font-size:14px}
 .nr{flex:none;width:28px;height:28px;border-radius:50%;background:var(--text);color:#fff;font-size:15px;
   font-weight:700;display:inline-flex;align-items:center;justify-content:center}
 .nr.ok{background:var(--gruen)}
@@ -53,14 +54,22 @@ details{margin-top:10px}summary{cursor:pointer;color:var(--dunkel);font-weight:6
 .pos{display:grid;grid-template-columns:64px 1fr auto;gap:10px;align-items:center;padding:10px 0;
   border-top:1px solid var(--linie)}
 .pos:first-of-type{border-top:0}
-.pos img{width:64px;height:64px;object-fit:cover;border-radius:6px}
-.pos .t{font-weight:600}.pos .u{font-size:14px;color:var(--grau)}
+.pos img,.pos .etik{width:64px;height:64px;object-fit:cover;border-radius:6px}
+.pos .etik{background:var(--gruenf);color:var(--dunkel);font-weight:700;font-size:13px;display:flex;
+  align-items:center;justify-content:center;text-align:center}
+.pos .t{font-weight:600;overflow-wrap:anywhere}.pos .u{font-size:14px;color:var(--grau)}
 .leiste{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:2px solid var(--gruen);padding:10px 12px;
   z-index:6}
 .leiste .in{max-width:696px;margin:0 auto;display:flex;gap:8px;align-items:center}
 .leiste .zahl{flex:none;font-weight:700;min-width:84px}
-video{width:100%;border-radius:8px;background:#000;max-height:50vh}
-#scanfeld{display:none;margin-top:8px}
+/* Der Scanner liegt ueber der Seite - im Serienmodus bleibt er offen. */
+#scanfeld{display:none;position:fixed;inset:0;z-index:20;background:#111;color:#fff;padding:12px;
+  flex-direction:column;gap:10px}
+#scanfeld.offen{display:flex}
+#scanfeld video{width:100%;flex:1;min-height:0;object-fit:cover;border-radius:8px;background:#000}
+#scantitel{font-weight:700;font-size:18px}
+#scanstatus{min-height:3.2em;font-size:16px;padding:8px 10px;border-radius:8px;background:#2a2f33}
+#scanstatus.gut{background:#0d6b52}#scanstatus.schlecht{background:#8f1d17}
 .versteckt{display:none!important}
 </style>
 </head>
@@ -82,13 +91,10 @@ video{width:100%;border-radius:8px;background:#000;max-height:50vh}
 <div class="karte" id="k-neu">
   <h2><span class="nr" id="n1">1</span> Wo liegt es?</h2>
   <div id="ortanzeige" class="versteckt"><div class="ort" id="ortcode"></div><div class="ortname" id="ortname"></div></div>
-  <div class="reihe" id="scanknoepfe">
+  <div class="reihe scanknopf">
     <button type="button" id="b-scan">Fach scannen</button>
     <button type="button" class="zweit" id="b-scanfoto">Scan per Foto</button>
   </div>
-  <div id="scanfeld"><video id="video" playsinline muted></video>
-    <button type="button" class="zweit" id="b-scanstop" style="margin-top:8px">Scannen beenden</button></div>
-  <input type="file" id="i-scanfoto" accept="image/*" capture="environment" class="versteckt">
   <label for="f-ort" id="l-ort">oder Nummer eintippen bzw. auswählen</label>
   <input type="text" id="f-ort" list="ortliste" placeholder="z. B. WSA05-2-L" autocapitalize="characters"
          autocomplete="off" spellcheck="false">
@@ -97,14 +103,30 @@ video{width:100%;border-radius:8px;background:#000;max-height:50vh}
   sagt genauer, wo das Teil liegt. Der Ort bleibt für die nächste Position stehen.</p>
   <div id="ortbefund"></div>
 
-  <h2 style="margin-top:18px"><span class="nr" id="n2">2</span> Foto</h2>
+  <h2 style="margin-top:18px"><span class="nr" id="n2">2</span> Trägt es schon ein Etikett? <small>sonst weiter mit 3</small></h2>
+  <div id="objanzeige" class="versteckt"><div class="ort" id="objcode"></div>
+    <button type="button" class="zweit klein" id="b-objweg" style="margin:6px 0">Nummer entfernen</button></div>
+  <div class="reihe scanknopf">
+    <button type="button" id="b-objscan">Etikett scannen</button>
+    <button type="button" class="zweit" id="b-serie">Viele nacheinander</button>
+  </div>
+  <label for="f-obj" id="l-obj">oder Nummer eintippen</label>
+  <input type="text" id="f-obj" placeholder="z. B. FOL-260026-0" autocapitalize="characters" autocomplete="off"
+         spellcheck="false">
+  <p class="hinweis" id="h-obj">Für Teile mit <b>Labornummer</b> (FOL-…, BOX-…, MFP-…): Dann reichen Lagerort und Nummer,
+  Foto und Bezeichnung sind freiwillig. <b>„Viele nacheinander“</b> speichert jedes gescannte Etikett sofort am
+  eingestellten Ort. Ein Fach-Aufkleber dazwischen wechselt den Ort.</p>
+  <div id="objbefund"></div>
+  <input type="file" id="i-scanfoto" accept="image/*" capture="environment" class="versteckt">
+
+  <h2 style="margin-top:18px"><span class="nr" id="n3">3</span> Foto <small id="frei3"></small></h2>
   <button type="button" id="b-foto">Foto aufnehmen</button>
   <input type="file" id="i-foto" accept="image/*" capture="environment" class="versteckt">
   <div class="fotos" id="fotos"></div>
   <p class="hinweis">Aus dem Foto werden Hersteller, Artikelnummer und Charge gelesen. Am besten zwei Bilder:
   eines vom ganzen Teil und <b>eines vom Etikett, so nah, dass die Schrift scharf ist</b>.</p>
 
-  <h2 style="margin-top:18px"><span class="nr" id="n3">3</span> Was ist es?</h2>
+  <h2 style="margin-top:18px"><span class="nr" id="n4">4</span> Was ist es? <small id="frei4"></small></h2>
   <label for="f-gruppe">Gruppe</label>
   <select id="f-gruppe"></select>
   <input type="text" id="f-gruppefrei" class="versteckt" placeholder="Gruppe in eigenen Worten" style="margin-top:8px">
@@ -147,6 +169,13 @@ video{width:100%;border-radius:8px;background:#000;max-height:50vh}
 </div>
 </main>
 
+<div id="scanfeld">
+  <div id="scantitel"></div>
+  <video id="video" playsinline muted></video>
+  <div id="scanstatus"></div>
+  <button type="button" id="b-scanstop">Scannen beenden</button>
+</div>
+
 <div class="leiste"><div class="in">
   <span class="zahl" id="leistezahl">0 Positionen</span>
   <button type="button" id="b-nachoben" class="zweit">Neue Position</button>
@@ -158,7 +187,7 @@ var STAMM = {"stand":"30.09.2026","orte":[["RCA1-1","CNC-Rollcontainer 1, Fach 1
 var ORT = {};                       // Code -> Bezeichnung
 STAMM.orte.forEach(function(o){ ORT[o[0]] = o[1]; });
 var Z = {wer:"", positionen:[], naechste:1};      // der ganze Zustand
-var A = {ort:"", quelle:"", fotos:[], bearbeite:null};   // die Position in Arbeit
+var A = {ort:"", quelle:"", obj:"", fotos:[], bearbeite:null};   // die Position in Arbeit
 function $(id){ return document.getElementById(id); }
 function esc(t){ return String(t == null ? "" : t).replace(/[&<>"]/g, function(c){
   return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
@@ -191,10 +220,27 @@ function speicherHinweis(){
     'Lassen Sie diese Seite offen, bis Sie die Datei erzeugt haben. Schließen oder Neuladen löscht alles.</div>';
 }
 
+/* ---------- Labornummern: Form und Pruefziffer (Damm), wie nummern.py im Laborserver ---------- */
+var DAMM = ["0317598642","7092154863","4206871359","1750983426","6123045978",
+            "3674209581","5869720134","8945362017","9438617205","2581436790"];
+var OBJFORM = /^([A-Z][A-Z0-9]{1,3})-(\d{2})(\d{4,})-(\d)$/;
+function objGueltig(code){
+  var m = OBJFORM.exec(code);
+  if (!m) return false;
+  var summe = 0, i;
+  for (i = 0; i < m[1].length; i++) summe += m[1].charCodeAt(i);
+  var lfd = String(parseInt(m[3], 10));
+  while (lfd.length < 4) lfd = "0" + lfd;
+  var ziffern = ("0" + (summe % 100)).slice(-2) + m[2] + lfd + m[4], z = 0;
+  for (i = 0; i < ziffern.length; i++) z = Number(DAMM[z].charAt(Number(ziffern.charAt(i))));
+  return z === 0;
+}
+function normal(t){ return String(t || "").trim().toUpperCase().replace(/\s+/g, ""); }
+function siehtWieObjektAus(code){ return OBJFORM.test(code); }
+
 /* ---------- Lagerort ---------- */
-function ortNormal(t){ return String(t || "").trim().toUpperCase().replace(/\s+/g, ""); }
 function ortSetzen(code, quelle){
-  code = ortNormal(code);
+  code = normal(code);
   A.ort = code; A.quelle = code ? quelle : "";
   $("f-ort").value = code;
   $("ortanzeige").classList.toggle("versteckt", !code);
@@ -203,62 +249,140 @@ function ortSetzen(code, quelle){
   var b = "";
   if (code && !ORT[code]) {
     b = '<div class="befund warn"><b>„' + esc(code) + '“ steht nicht in der Liste dieses Werkzeugs.</b>' +
-        'Wenn die Nummer so auf dem Aufkleber steht, ist das in Ordnung: Der Ort ist neuer als diese Datei. ' +
+        'Wenn die Nummer so auf dem Aufkleber steht, ist das in Ordnung: Der Ort ist neuer als diese Seite. ' +
         'Sonst bitte noch einmal scannen oder Tippfehler prüfen.</div>';
   }
   $("ortbefund").innerHTML = b;
   marken();
 }
-$("f-ort").addEventListener("change", function(){ ortSetzen(this.value, "getippt"); });
+$("f-ort").addEventListener("change", function(){
+  var c = normal(this.value);
+  if (siehtWieObjektAus(c)) { this.value = A.ort; objSetzen(c, "getippt");
+    $("ortbefund").innerHTML = '<div class="befund warn"><b>Das ist eine Labornummer, kein Lagerort.</b>' +
+      'Sie steht jetzt unter Punkt 2. Hier bitte den Aufkleber am Fach angeben.</div>'; return; }
+  ortSetzen(c, "getippt");
+});
 
+/* ---------- Labornummer eines schon etikettierten Teils ---------- */
+function objSetzen(code, quelle){
+  code = normal(code);
+  if (code && !objGueltig(code)) {
+    $("objbefund").innerHTML = '<div class="befund error"><b>„' + esc(code) + '“ ist keine gültige Labornummer.</b>' +
+      (siehtWieObjektAus(code) ? 'Die Prüfziffer am Ende passt nicht. Bitte noch einmal scannen oder Ziffer für Ziffer vergleichen.'
+                               : 'Erwartet wird die Form FOL-260026-0. Ein Fach-Aufkleber gehört unter Punkt 1.') + '</div>';
+    return false;
+  }
+  A.obj = code; A.objquelle = code ? quelle : "";
+  $("f-obj").value = code;
+  $("objanzeige").classList.toggle("versteckt", !code);
+  $("objcode").textContent = code;
+  $("objbefund").innerHTML = "";
+  marken();
+  return true;
+}
+$("f-obj").addEventListener("change", function(){ objSetzen(this.value, "getippt"); });
+$("b-objweg").onclick = function(){ objSetzen("", ""); };
+
+/* ---------- Scanner: ein Fenster fuer Fach, Etikett und Serie ----------
+   Was gescannt wurde, entscheidet die Form des Codes, nicht der gedrueckte Knopf:
+   Eine Labornummer ist ein Teil, alles andere ein Lagerort. */
 var SCAN = ("BarcodeDetector" in window);
-var detektor = null, strom = null, scanAktiv = false;
-function scanMeldung(text){
-  $("ortbefund").innerHTML = '<div class="befund warn"><b>' + esc(text) + '</b>' +
-    'Tippen Sie die Nummer vom Aufkleber ein oder wählen Sie sie aus der Liste.</div>';
-}
-function scanStart(){
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { $("i-scanfoto").click(); return; }
-  navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}}).then(function(s){
-    strom = s; scanAktiv = true;
-    $("video").srcObject = s; $("video").play();
-    $("scanfeld").style.display = "block";
-    scanSchleife();
-  }).catch(function(){ $("i-scanfoto").click(); });     // Kamera verweigert: Standfoto geht fast immer
-}
-function scanStop(){
-  scanAktiv = false;
-  if (strom) strom.getTracks().forEach(function(t){ t.stop(); });
-  strom = null; $("scanfeld").style.display = "none";
-}
-function scanSchleife(){
-  if (!scanAktiv) return;
-  detektor.detect($("video")).then(function(f){
-    if (f.length && f[0].rawValue) { scanStop(); ortSetzen(f[0].rawValue, "scan"); }
-    else setTimeout(scanSchleife, 250);
-  }).catch(function(){ setTimeout(scanSchleife, 400); });
-}
+var detektor = null, strom = null, scanModus = "", zuletzt = "", zuletztZeit = 0, fotoZiel = "ort";
 if (SCAN) {
   try { detektor = new BarcodeDetector({formats:["data_matrix", "qr_code"]}); } catch (x) { SCAN = false; }
 }
+function status(text, art){ var s = $("scanstatus"); s.textContent = text; s.className = art || ""; }
+function serieSpeichern(code){
+  var vorhanden = Z.positionen.findIndex(function(p){ return p.objekt_id === code; });
+  if (vorhanden >= 0 && Z.positionen[vorhanden].lagerort === A.ort) {
+    status(code + " steht schon an " + A.ort + " · " + Z.positionen.length + " Positionen", "gut"); return; }
+  var p = {lagerort: A.ort, lagerort_quelle: A.quelle, lagerort_bekannt: !!ORT[A.ort], art: "umlagern",
+           objekt_id: code, gruppe: "", bezeichnung: "", menge: "", bemerkung: "", fotos: [],
+           erfasst: new Date().toISOString()};
+  if (vorhanden >= 0) { p.lfd = Z.positionen[vorhanden].lfd; Z.positionen[vorhanden] = p; }
+  else { p.lfd = Z.naechste++; Z.positionen.push(p); }
+  Z.wer = $("f-wer").value.trim();
+  sichern(); listeZeigen();
+  status(code + " → " + A.ort + (vorhanden >= 0 ? "  (Ort geändert)" : "  gespeichert") +
+         " · " + Z.positionen.length + " Positionen", "gut");
+  if (navigator.vibrate) navigator.vibrate(60);
+}
+function ergebnis(text){
+  var code = normal(text), jetzt = Date.now();
+  if (scanModus === "serie") {
+    if (code === zuletzt && jetzt - zuletztZeit < 3000) return true;      // derselbe Aufkleber steht noch im Bild
+    zuletzt = code; zuletztZeit = jetzt;
+    if (siehtWieObjektAus(code)) {
+      if (!objGueltig(code)) { status(code + ": Prüfziffer passt nicht, bitte noch einmal", "schlecht"); return true; }
+      if (!A.ort) { status("Erst einen Fach-Aufkleber scannen, dann die Teile", "schlecht"); return true; }
+      serieSpeichern(code);
+    } else {
+      ortSetzen(code, "scan");
+      status("Lagerort jetzt: " + code + (ORT[code] ? " · " + ORT[code] : ""), "gut");
+      if (navigator.vibrate) navigator.vibrate([40, 40, 40]);
+    }
+    return true;                                   // Serie laeuft weiter
+  }
+  if (siehtWieObjektAus(code)) { objSetzen(code, "scan"); }
+  else { ortSetzen(code, "scan");
+    if (scanModus === "obj") $("objbefund").innerHTML = '<div class="befund warn"><b>Das war ein Fach-Aufkleber.</b>' +
+      'Er ist als Lagerort übernommen. Für das Teil bitte sein eigenes Etikett scannen.</div>'; }
+  return false;                                    // Einzelscan: Fenster schliessen
+}
+function scanStart(modus){
+  scanModus = modus; zuletzt = "";
+  if (modus === "serie" && !$("f-wer").value.trim()) {
+    befundeZeigen([["error", "Ihr Name fehlt.", "Ganz oben eintragen, dann den Serien-Scan starten."]], "objbefund"); return; }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { fotoZiel = modus; $("i-scanfoto").click(); return; }
+  navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}}).then(function(s){
+    strom = s;
+    $("video").srcObject = s; $("video").play();
+    $("scantitel").textContent = modus === "serie" ? "Viele nacheinander: Fach, dann Teile" :
+                                 modus === "obj" ? "Etikett des Teils scannen" : "Aufkleber am Fach scannen";
+    status(modus === "serie" ? (A.ort ? "Lagerort: " + A.ort + " · jetzt Teile scannen" : "Zuerst den Fach-Aufkleber scannen") : "");
+    $("scanfeld").classList.add("offen");
+    scanSchleife();
+  }).catch(function(){ fotoZiel = modus; $("i-scanfoto").click(); });     // Kamera verweigert: Standfoto geht fast immer
+}
+function scanStop(){
+  scanModus = "";
+  if (strom) strom.getTracks().forEach(function(t){ t.stop(); });
+  strom = null; $("scanfeld").classList.remove("offen");
+}
+function scanSchleife(){
+  if (!strom) return;
+  detektor.detect($("video")).then(function(f){
+    if (f.length && f[0].rawValue && !ergebnis(f[0].rawValue)) { scanStop(); return; }
+    setTimeout(scanSchleife, 250);
+  }).catch(function(){ setTimeout(scanSchleife, 400); });
+}
 if (!SCAN) {
   // Ohne Scanner darf die Seite nicht so tun, als gaebe es einen.
-  $("scanknoepfe").classList.add("versteckt");
+  Array.prototype.forEach.call(document.querySelectorAll(".scanknopf"), function(e){ e.classList.add("versteckt"); });
   $("l-ort").textContent = "Nummer vom Aufkleber eintippen oder auswählen";
   $("h-ort").innerHTML = "Dieses Handy kann den Code nicht selbst lesen. Die Nummer steht in Klarschrift " +
     "neben dem Code, z. B. <b>WSA05-2-L</b>. Nehmen Sie den <b>kleinen Aufkleber am Fach</b>, nicht das große " +
     "Schild an der Tür. Der Ort bleibt für die nächste Position stehen.";
+  $("l-obj").textContent = "Labornummer vom Etikett eintippen";
+  $("h-obj").innerHTML = "Für Teile mit <b>Labornummer</b> (FOL-…, BOX-…, MFP-…): Dann reichen Lagerort und Nummer, " +
+    "Foto und Bezeichnung sind freiwillig. Die letzte Ziffer ist eine Prüfziffer, Tippfehler fallen sofort auf.";
 } else {
-  $("b-scan").onclick = scanStart;
+  $("b-scan").onclick = function(){ scanStart("ort"); };
+  $("b-objscan").onclick = function(){ scanStart("obj"); };
+  $("b-serie").onclick = function(){ scanStart("serie"); };
   $("b-scanstop").onclick = scanStop;
-  $("b-scanfoto").onclick = function(){ $("i-scanfoto").click(); };
+  $("b-scanfoto").onclick = function(){ fotoZiel = "ort"; $("i-scanfoto").click(); };
   $("i-scanfoto").onchange = function(){
     var d = this.files[0]; this.value = "";
     if (!d) return;
+    var ziel = fotoZiel === "obj" ? "objbefund" : "ortbefund";
+    scanModus = fotoZiel === "serie" ? "obj" : fotoZiel;
     createImageBitmap(d).then(function(b){ return detektor.detect(b); }).then(function(f){
-      if (f.length && f[0].rawValue) ortSetzen(f[0].rawValue, "scan");
-      else scanMeldung("Auf dem Foto war kein Code zu erkennen.");
-    }).catch(function(){ scanMeldung("Das Foto ließ sich nicht auswerten."); });
+      if (f.length && f[0].rawValue) ergebnis(f[0].rawValue);
+      else befundeZeigen([["warn", "Auf dem Foto war kein Code zu erkennen.", "Näher herangehen oder die Nummer eintippen."]], ziel);
+      scanModus = "";
+    }).catch(function(){ scanModus = "";
+      befundeZeigen([["warn", "Das Foto ließ sich nicht auswerten.", "Die Nummer vom Aufkleber eintippen."]], ziel); });
   };
 }
 
@@ -309,15 +433,20 @@ function gruppe(){ var v = $("f-gruppe").value; return v === FREI ? $("f-gruppef
 
 /* ---------- Pruefen und speichern ---------- */
 function marken(){
+  var e = !!A.obj;                                  // etikettiert: Foto und Beschreibung sind freiwillig
   $("n1").classList.toggle("ok", !!A.ort);
-  $("n2").classList.toggle("ok", A.fotos.length > 0);
-  $("n3").classList.toggle("ok", !!gruppe() && !!$("f-bez").value.trim());
+  $("n2").classList.toggle("ok", e);
+  $("n3").classList.toggle("ok", e || A.fotos.length > 0);
+  $("n4").classList.toggle("ok", e || (!!gruppe() && !!$("f-bez").value.trim()));
+  $("frei3").textContent = e ? "freiwillig, die Nummer reicht" : "";
+  $("frei4").textContent = e ? "freiwillig, die Nummer reicht" : "";
 }
 ["f-bez", "f-gruppefrei"].forEach(function(id){ $(id).addEventListener("input", marken); });
 function pruefen(){
   var b = [];
   if (!$("f-wer").value.trim()) b.push(["error", "Ihr Name fehlt.", "Ganz oben eintragen. Er wird nur einmal gebraucht."]);
   if (!A.ort) b.push(["error", "Der Lagerort fehlt.", "Fach scannen oder die Nummer vom Aufkleber eintippen."]);
+  if (A.obj) return b;                              // Teil mit Labornummer: mehr braucht es nicht
   if (!A.fotos.length) b.push(["error", "Es gibt noch kein Foto.", "Mindestens eines aufnehmen, am besten mit lesbarem Etikett."]);
   if (!gruppe()) b.push(["error", "Die Gruppe fehlt.", "Aus der Liste wählen oder „etwas anderes“ und selbst benennen."]);
   if (!$("f-bez").value.trim()) b.push(["error", "Die Bezeichnung fehlt.", "Ein paar Worte reichen, z. B. „PC-Folie 250 µm“."]);
@@ -328,9 +457,10 @@ function befundeZeigen(b, ziel){
     return '<div class="befund ' + x[0] + '"><b>' + esc(x[1]) + '</b>' + esc(x[2]) + '</div>'; }).join("");
 }
 function felderLeeren(){
-  A.fotos = []; A.bearbeite = null;
-  ["f-bez", "f-menge", "f-bem", "f-gruppefrei"].forEach(function(id){ $(id).value = ""; });
+  A.fotos = []; A.bearbeite = null; A.obj = ""; A.objquelle = "";
+  ["f-bez", "f-menge", "f-bem", "f-gruppefrei", "f-obj"].forEach(function(id){ $(id).value = ""; });
   $("f-gruppe").value = ""; $("f-gruppefrei").classList.add("versteckt");
+  $("objanzeige").classList.add("versteckt"); $("objbefund").innerHTML = "";
   $("b-speichern").textContent = "Position speichern";
   $("b-abbrechen").classList.add("versteckt");
   fotosZeigen(); marken();
@@ -340,16 +470,17 @@ $("b-speichern").onclick = function(){
   befundeZeigen(b, "befunde");
   if (b.length) return;
   Z.wer = $("f-wer").value.trim();
-  var p = {lagerort: A.ort, lagerort_quelle: A.quelle, lagerort_bekannt: !!ORT[A.ort], gruppe: gruppe(),
+  var p = {lagerort: A.ort, lagerort_quelle: A.quelle, lagerort_bekannt: !!ORT[A.ort],
+           art: A.obj ? "umlagern" : "neu", objekt_id: A.obj, gruppe: gruppe(),
            bezeichnung: $("f-bez").value.trim(), menge: $("f-menge").value.trim(),
            bemerkung: $("f-bem").value.trim(), fotos: A.fotos.slice(), erfasst: new Date().toISOString()};
-  if (A.bearbeite !== null) {
-    p.lfd = Z.positionen[A.bearbeite].lfd; Z.positionen[A.bearbeite] = p;
-  } else {
-    p.lfd = Z.naechste++; Z.positionen.push(p);
-  }
+  var doppelt = A.obj ? Z.positionen.findIndex(function(q, i){ return q.objekt_id === A.obj && i !== A.bearbeite; }) : -1;
+  if (A.bearbeite !== null) { p.lfd = Z.positionen[A.bearbeite].lfd; Z.positionen[A.bearbeite] = p; }
+  else if (doppelt >= 0) { p.lfd = Z.positionen[doppelt].lfd; Z.positionen[doppelt] = p; }      // dasselbe Teil: der neue Ort gilt
+  else { p.lfd = Z.naechste++; Z.positionen.push(p); }
   sichern(); felderLeeren(); listeZeigen();
-  befundeZeigen([["ok", "Position " + p.lfd + " gespeichert.", "Der Lagerort " + p.lagerort + " bleibt für die nächste Position stehen."]], "befunde");
+  befundeZeigen([["ok", "Position " + p.lfd + " gespeichert" + (doppelt >= 0 ? " – das Teil stand schon in der Liste, der neue Ort gilt." : "."),
+                  "Der Lagerort " + p.lagerort + " bleibt für die nächste Position stehen."]], "befunde");
   window.scrollTo({top: $("k-neu").offsetTop - 70, behavior: "smooth"});
 };
 $("b-abbrechen").onclick = function(){ felderLeeren(); $("befunde").innerHTML = ""; };
@@ -361,10 +492,12 @@ function listeZeigen(){
   $("anzahl").textContent = n ? "(" + n + ")" : "";
   $("leistezahl").textContent = n + (n === 1 ? " Position" : " Positionen");
   $("liste").innerHTML = n ? Z.positionen.slice().reverse().map(function(p){
-    return '<div class="pos"><img src="' + p.fotos[0].daten + '" alt=""><div><div class="t">' + esc(p.bezeichnung) +
-      '</div><div class="u">' + esc(p.lagerort) + ' · ' + esc(p.gruppe) + ' · ' + p.fotos.length +
-      (p.fotos.length === 1 ? ' Foto' : ' Fotos') + '</div></div>' +
-      '<button type="button" class="zweit klein" data-lfd="' + p.lfd + '">ändern</button></div>'; }).join("")
+    var bild = p.fotos.length ? '<img src="' + p.fotos[0].daten + '" alt="">' : '<div class="etik">Etikett</div>';
+    var titel = p.bezeichnung || p.objekt_id;
+    var unter = p.lagerort + (p.objekt_id && p.bezeichnung ? ' · ' + p.objekt_id : '') +
+      (p.gruppe ? ' · ' + p.gruppe : '') + (p.fotos.length ? ' · ' + p.fotos.length + (p.fotos.length === 1 ? ' Foto' : ' Fotos') : '');
+    return '<div class="pos">' + bild + '<div><div class="t">' + esc(titel) + '</div><div class="u">' + esc(unter) +
+      '</div></div><button type="button" class="zweit klein" data-lfd="' + p.lfd + '">ändern</button></div>'; }).join("")
     : '<p class="hinweis">Noch nichts erfasst.</p>';
 }
 $("liste").addEventListener("click", function(e){
@@ -373,9 +506,11 @@ $("liste").addEventListener("click", function(e){
   var i = Z.positionen.findIndex(function(p){ return String(p.lfd) === lfd; });
   if (i < 0) return;
   var p = Z.positionen[i];
+  felderLeeren();
   A.bearbeite = i; A.fotos = p.fotos.slice();
   ortSetzen(p.lagerort, p.lagerort_quelle);
-  var bekannt = STAMM.gruppen.indexOf(p.gruppe) >= 0;
+  if (p.objekt_id) objSetzen(p.objekt_id, "liste");
+  var bekannt = !p.gruppe || STAMM.gruppen.indexOf(p.gruppe) >= 0;
   $("f-gruppe").value = bekannt ? p.gruppe : FREI;
   $("f-gruppefrei").classList.toggle("versteckt", bekannt);
   $("f-gruppefrei").value = bekannt ? "" : p.gruppe;
@@ -389,7 +524,7 @@ $("b-nachoben").onclick = function(){ window.scrollTo({top: $("k-neu").offsetTop
 
 /* ---------- Abgabe ---------- */
 function paket(){
-  return {art: "bestandserfassung", format: 1, werkzeug_stand: STAMM.stand, erfasser: Z.wer,
+  return {art: "bestandserfassung", format: 2, werkzeug_stand: STAMM.stand, erfasser: Z.wer,
           erzeugt: new Date().toISOString(), anzahl: Z.positionen.length, positionen: Z.positionen};
 }
 function dateiname(){
@@ -404,7 +539,7 @@ function abgabePruefen(){
     befundeZeigen([["error", "Es ist noch nichts erfasst.", "Erst mindestens eine Position speichern."]], "abgabebefund");
     return false;
   }
-  if (A.fotos.length || $("f-bez").value.trim()) {
+  if (A.fotos.length || $("f-bez").value.trim() || A.obj) {
     befundeZeigen([["warn", "Oben steht eine angefangene Position.", "Sie ist noch nicht gespeichert und kommt nicht in die Datei."]], "abgabebefund");
   } else $("abgabebefund").innerHTML = "";
   return true;
